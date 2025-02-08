@@ -1,0 +1,13 @@
+IssueName,FunctionName,FoundIn,Address,Status,Priority,Comment
+Unbound Loop,Loop Check,__report_securityfailureEx,0x140011e7e,Not Checked,High,
+Unbound Loop,Loop Check,_RTC_CheckStackVars,0x14001217a,Not Checked,Medium,
+Unbound Loop,Loop Check,_RTC_CheckStackVars2,0x140012231,Not Checked,Medium,
+Unbound Loop,Loop Check,_RTC_CheckStackVars2,0x140012259,Not Checked,Low,
+Unbound Loop,Loop Check,_RTC_CheckStackVars2,0x1400122ba,Not Checked,Low,
+Unbound Loop,Loop Check,_getMemBlockDataString,0x140012ecc,Not Checked,Low,
+Unbound Loop,Loop Check,find_pe_section,0x140013575,Not Checked,Medium,
+Unbound Loop,Loop Check,__scrt_acquire_startup_lock,0x1400136fc,Not Checked,Low,
+Unbound Loop,Loop Check,_RTC_Initialize,0x140014505,Not Checked,Medium,
+Unbound Loop,Loop Check,_RTC_Terminate,0x140014565,Not Checked,Medium,
+Unbound Loop,Loop Check,_RTC_GetSrcLine,0x140015364,Not Checked,Low,
+Unbound Loop,Loop Check,_RTC_GetSrcLine,0x140015411,Not Checked,High,

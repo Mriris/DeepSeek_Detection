@@ -1,0 +1,2462 @@
+[
+    {
+        "function_name": "__report_securityfailureEx",
+        "instructions": [
+            {
+                "address": "0x140011dc0",
+                "instruction": "mov [rsp+parameters], r8",
+                "priority": ""
+            },
+            {
+                "address": "0x140011dc5",
+                "instruction": "mov [rsp+parameter_count], edx",
+                "priority": ""
+            },
+            {
+                "address": "0x140011dc9",
+                "instruction": "mov [rsp+failure_code], ecx",
+                "priority": ""
+            },
+            {
+                "address": "0x140011dcd",
+                "instruction": "sub rsp, 38h",
+                "priority": ""
+            },
+            {
+                "address": "0x140011dd1",
+                "instruction": "mov ecx, 17h; ProcessorFeature",
+                "priority": ""
+            },
+            {
+                "address": "0x140011dd6",
+                "instruction": "call cs:__imp_IsProcessorFeaturePresent",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ddc",
+                "instruction": "test eax, eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011dde",
+                "instruction": "jz short loc_140011DE8",
+                "priority": ""
+            },
+            {
+                "address": "0x140011de0",
+                "instruction": "mov eax, [rsp+38h+failure_code]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011de4",
+                "instruction": "mov ecx, eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011de6",
+                "instruction": "int 29h; Win8: RtlFailFast(ecx)",
+                "priority": ""
+            },
+            {
+                "address": "0x140011de8",
+                "instruction": "lea rcx, GS_ContextRecord; pContextRecord",
+                "priority": ""
+            },
+            {
+                "address": "0x140011def",
+                "instruction": "call capture_current_context",
+                "priority": ""
+            },
+            {
+                "address": "0x140011df4",
+                "instruction": "mov rax, [rsp+38h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011df9",
+                "instruction": "mov cs:GS_ContextRecord.Rip, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e00",
+                "instruction": "lea rax, [rsp+38h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e05",
+                "instruction": "add rax, 8",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e09",
+                "instruction": "mov cs:GS_ContextRecord.Rsp, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e10",
+                "instruction": "mov rax, cs:GS_ContextRecord.Rip",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e17",
+                "instruction": "mov cs:GS_ExceptionRecord.ExceptionAddress, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e1e",
+                "instruction": "mov cs:GS_ExceptionRecord.ExceptionCode, 0C0000409h",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e28",
+                "instruction": "mov cs:GS_ExceptionRecord.ExceptionFlags, 1",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e32",
+                "instruction": "cmp [rsp+38h+parameter_count], 0",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e37",
+                "instruction": "jbe short loc_140011E49",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e39",
+                "instruction": "cmp [rsp+38h+parameters], 0",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e3f",
+                "instruction": "jnz short loc_140011E49",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e41",
+                "instruction": "mov [rsp+38h+parameter_count], 0",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e49",
+                "instruction": "cmp [rsp+38h+parameter_count], 0Eh",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e4e",
+                "instruction": "jbe short loc_140011E5A",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e50",
+                "instruction": "mov eax, [rsp+38h+parameter_count]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e54",
+                "instruction": "dec eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e56",
+                "instruction": "mov [rsp+38h+parameter_count], eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e5a",
+                "instruction": "mov eax, [rsp+38h+parameter_count]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e5e",
+                "instruction": "inc eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e60",
+                "instruction": "mov cs:GS_ExceptionRecord.NumberParameters, eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e66",
+                "instruction": "mov eax, 8",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e6b",
+                "instruction": "imul rax, 0",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e6f",
+                "instruction": "lea rcx, GS_ExceptionRecord.ExceptionInformation",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e76",
+                "instruction": "mov edx, [rsp+38h+failure_code]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e7a",
+                "instruction": "mov [rcx+rax], rdx",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e7e",
+                "instruction": "mov [rsp+38h+i], 0",
+                "priority": "High"
+            },
+            {
+                "address": "0x140011e86",
+                "instruction": "jmp short loc_140011E92",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e88",
+                "instruction": "mov eax, [rsp+38h+i]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e8c",
+                "instruction": "inc eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e8e",
+                "instruction": "mov [rsp+38h+i], eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e92",
+                "instruction": "mov eax, [rsp+38h+parameter_count]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e96",
+                "instruction": "cmp [rsp+38h+i], eax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e9a",
+                "instruction": "jnb short loc_140011EBE",
+                "priority": ""
+            },
+            {
+                "address": "0x140011e9c",
+                "instruction": "mov eax, [rsp+38h+i]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ea0",
+                "instruction": "mov ecx, [rsp+38h+i]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ea4",
+                "instruction": "inc ecx",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ea6",
+                "instruction": "mov ecx, ecx",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ea8",
+                "instruction": "lea rdx, GS_ExceptionRecord.ExceptionInformation",
+                "priority": ""
+            },
+            {
+                "address": "0x140011eaf",
+                "instruction": "mov r8, [rsp+38h+parameters]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011eb4",
+                "instruction": "mov rax, [r8+rax*8]",
+                "priority": ""
+            },
+            {
+                "address": "0x140011eb8",
+                "instruction": "mov [rdx+rcx*8], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ebc",
+                "instruction": "jmp short loc_140011E88",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ebe",
+                "instruction": "lea rcx, GS_ExceptionPointers; exception_pointers",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ec5",
+                "instruction": "call j___raise_securityfailure",
+                "priority": ""
+            },
+            {
+                "address": "0x140011eca",
+                "instruction": "nop",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ecb",
+                "instruction": "add rsp, 38h",
+                "priority": ""
+            },
+            {
+                "address": "0x140011ecf",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "High"
+    },
+    {
+        "function_name": "_RTC_CheckStackVars",
+        "instructions": [
+            {
+                "address": "0x140012110",
+                "instruction": "mov [rsp+arg_8], rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012115",
+                "instruction": "mov [rsp+arg_10], rbp",
+                "priority": ""
+            },
+            {
+                "address": "0x14001211a",
+                "instruction": "push rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x14001211b",
+                "instruction": "sub rsp, 20h",
+                "priority": ""
+            },
+            {
+                "address": "0x14001211f",
+                "instruction": "xor ebx, ebx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012121",
+                "instruction": "mov rsi, v",
+                "priority": ""
+            },
+            {
+                "address": "0x140012124",
+                "instruction": "mov rbp, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x140012127",
+                "instruction": "cmp [v], ebx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012129",
+                "instruction": "jle short loc_140012181",
+                "priority": ""
+            },
+            {
+                "address": "0x14001212b",
+                "instruction": "mov [rsp+28h+arg_0], rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012130",
+                "instruction": "mov edi, ebx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012132",
+                "instruction": "nop dword ptr [rax+00h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012136",
+                "instruction": "nop word ptr [rax+rax+00000000h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012140",
+                "instruction": "mov v, [rsi+8]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012144",
+                "instruction": "movsxd frame, dword ptr [v+rdi]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012148",
+                "instruction": "cmp dword ptr [frame+rbp-4], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012150",
+                "instruction": "jnz short loc_140012163",
+                "priority": ""
+            },
+            {
+                "address": "0x140012152",
+                "instruction": "movsxd rax, dword ptr [v+rdi+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012157",
+                "instruction": "add rax, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x14001215a",
+                "instruction": "cmp dword ptr [rax+rbp], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012161",
+                "instruction": "jz short loc_140012172",
+                "priority": ""
+            },
+            {
+                "address": "0x140012163",
+                "instruction": "mov frame, [rsp+28h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x140012168",
+                "instruction": "mov v, [v+rdi+8]; varname",
+                "priority": ""
+            },
+            {
+                "address": "0x14001216d",
+                "instruction": "call j_?_RTC_StackFailure@@YAXPEAXPEBD@Z; _RTC_StackFailure(void *,char const *)",
+                "priority": ""
+            },
+            {
+                "address": "0x140012172",
+                "instruction": "inc ebx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012174",
+                "instruction": "add rdi, 10h",
+                "priority": ""
+            },
+            {
+                "address": "0x140012178",
+                "instruction": "cmp ebx, [rsi]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001217a",
+                "instruction": "jl short loc_140012140",
+                "priority": "Medium"
+            },
+            {
+                "address": "0x14001217c",
+                "instruction": "mov rdi, [rsp+28h+arg_0]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012181",
+                "instruction": "mov rbx, [rsp+28h+arg_8]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012186",
+                "instruction": "mov rbp, [rsp+28h+arg_10]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001218b",
+                "instruction": "add rsp, 20h",
+                "priority": ""
+            },
+            {
+                "address": "0x14001218f",
+                "instruction": "pop rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012190",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Medium"
+    },
+    {
+        "function_name": "_RTC_CheckStackVars2",
+        "instructions": [
+            {
+                "address": "0x1400121c0",
+                "instruction": "push rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c2",
+                "instruction": "push rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c3",
+                "instruction": "sub rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c7",
+                "instruction": "mov [rsp+38h+arg_0], rbp",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121cc",
+                "instruction": "xor edi, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ce",
+                "instruction": "mov [rsp+38h+var_18], r15",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d3",
+                "instruction": "mov rbx, allocaList",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d6",
+                "instruction": "mov rbp, v",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d9",
+                "instruction": "mov r15, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121dc",
+                "instruction": "test v, v",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121df",
+                "instruction": "jz short loc_14001223D",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e1",
+                "instruction": "mov [rsp+38h+arg_8], rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e6",
+                "instruction": "mov esi, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e8",
+                "instruction": "cmp [v], edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ea",
+                "instruction": "jle short loc_140012238",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ec",
+                "instruction": "mov [rsp+38h+arg_10], r14",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f1",
+                "instruction": "mov r14d, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f4",
+                "instruction": "mov v, [rbp+8]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f8",
+                "instruction": "movsxd frame, dword ptr [v+r14]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121fc",
+                "instruction": "cmp dword ptr [frame+r15-4], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012205",
+                "instruction": "jnz short loc_140012219",
+                "priority": ""
+            },
+            {
+                "address": "0x140012207",
+                "instruction": "movsxd rax, dword ptr [v+r14+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001220c",
+                "instruction": "add rax, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x14001220f",
+                "instruction": "cmp dword ptr [rax+r15], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012217",
+                "instruction": "jz short loc_140012228",
+                "priority": ""
+            },
+            {
+                "address": "0x140012219",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x14001221e",
+                "instruction": "mov v, [v+r14+8]; varname",
+                "priority": ""
+            },
+            {
+                "address": "0x140012223",
+                "instruction": "call j_?_RTC_StackFailure@@YAXPEAXPEBD@Z; _RTC_StackFailure(void *,char const *)",
+                "priority": ""
+            },
+            {
+                "address": "0x140012228",
+                "instruction": "inc esi",
+                "priority": ""
+            },
+            {
+                "address": "0x14001222a",
+                "instruction": "add r14, 10h",
+                "priority": ""
+            },
+            {
+                "address": "0x14001222e",
+                "instruction": "cmp esi, [rbp+0]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012231",
+                "instruction": "jl short loc_1400121F4",
+                "priority": "Medium"
+            },
+            {
+                "address": "0x140012233",
+                "instruction": "mov r14, [rsp+38h+arg_10]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012238",
+                "instruction": "mov rsi, [rsp+38h+arg_8]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001223d",
+                "instruction": "mov r15, [rsp+38h+var_18]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012242",
+                "instruction": "mov rax, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012245",
+                "instruction": "mov rbp, [rsp+38h+arg_0]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224a",
+                "instruction": "test rbx, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224d",
+                "instruction": "jz short loc_1400122BC",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224f",
+                "instruction": "nop",
+                "priority": ""
+            },
+            {
+                "address": "0x140012250",
+                "instruction": "mov rax, [rax+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012254",
+                "instruction": "inc edi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012256",
+                "instruction": "test rax, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140012259",
+                "instruction": "jnz short loc_140012250",
+                "priority": ""
+            },
+            {
+                "address": "0x14001225b",
+                "instruction": "nop dword ptr [rax+rax+00h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012260",
+                "instruction": "cmp dword ptr [rbx], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012266",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x140012268",
+                "instruction": "cmp dword ptr [rbx+14h], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x14001226f",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x140012271",
+                "instruction": "cmp dword ptr [rbx+18h], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012278",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x14001227a",
+                "instruction": "cmp dword ptr [rbx+1Ch], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012281",
+                "instruction": "jz short loc_140012293",
+                "priority": ""
+            },
+            {
+                "address": "0x140012283",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x140012288",
+                "instruction": "mov r8d, edi; num",
+                "priority": ""
+            },
+            {
+                "address": "0x14001228b",
+                "instruction": "mov v, rbx; pn",
+                "priority": ""
+            },
+            {
+                "address": "0x14001228e",
+                "instruction": "call j_?_RTC_AllocaFailure@@YAXPEAXPEAU_RTC_ALLOCA_NODE@@H@Z; _RTC_AllocaFailure(void *,_RTC_ALLOCA_NODE *,int)",
+                "priority": ""
+            },
+            {
+                "address": "0x140012293",
+                "instruction": "mov rax, [rbx+0Ch]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012297",
+                "instruction": "cmp dword ptr [rax+rbx-4], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x14001229f",
+                "instruction": "jz short loc_1400122B1",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a1",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a6",
+                "instruction": "mov r8d, edi; num",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a9",
+                "instruction": "mov v, rbx; pn",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122ac",
+                "instruction": "call j_?_RTC_AllocaFailure@@YAXPEAXPEAU_RTC_ALLOCA_NODE@@H@Z; _RTC_AllocaFailure(void *,_RTC_ALLOCA_NODE *,int)",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b1",
+                "instruction": "mov rbx, [rbx+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b5",
+                "instruction": "dec edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b7",
+                "instruction": "test rbx, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122ba",
+                "instruction": "jnz short loc_140012260",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122bc",
+                "instruction": "add rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c0",
+                "instruction": "pop rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c1",
+                "instruction": "pop rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c2",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Medium"
+    },
+    {
+        "function_name": "_RTC_CheckStackVars2",
+        "instructions": [
+            {
+                "address": "0x1400121c0",
+                "instruction": "push rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c2",
+                "instruction": "push rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c3",
+                "instruction": "sub rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c7",
+                "instruction": "mov [rsp+38h+arg_0], rbp",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121cc",
+                "instruction": "xor edi, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ce",
+                "instruction": "mov [rsp+38h+var_18], r15",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d3",
+                "instruction": "mov rbx, allocaList",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d6",
+                "instruction": "mov rbp, v",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d9",
+                "instruction": "mov r15, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121dc",
+                "instruction": "test v, v",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121df",
+                "instruction": "jz short loc_14001223D",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e1",
+                "instruction": "mov [rsp+38h+arg_8], rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e6",
+                "instruction": "mov esi, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e8",
+                "instruction": "cmp [v], edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ea",
+                "instruction": "jle short loc_140012238",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ec",
+                "instruction": "mov [rsp+38h+arg_10], r14",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f1",
+                "instruction": "mov r14d, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f4",
+                "instruction": "mov v, [rbp+8]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f8",
+                "instruction": "movsxd frame, dword ptr [v+r14]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121fc",
+                "instruction": "cmp dword ptr [frame+r15-4], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012205",
+                "instruction": "jnz short loc_140012219",
+                "priority": ""
+            },
+            {
+                "address": "0x140012207",
+                "instruction": "movsxd rax, dword ptr [v+r14+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001220c",
+                "instruction": "add rax, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x14001220f",
+                "instruction": "cmp dword ptr [rax+r15], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012217",
+                "instruction": "jz short loc_140012228",
+                "priority": ""
+            },
+            {
+                "address": "0x140012219",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x14001221e",
+                "instruction": "mov v, [v+r14+8]; varname",
+                "priority": ""
+            },
+            {
+                "address": "0x140012223",
+                "instruction": "call j_?_RTC_StackFailure@@YAXPEAXPEBD@Z; _RTC_StackFailure(void *,char const *)",
+                "priority": ""
+            },
+            {
+                "address": "0x140012228",
+                "instruction": "inc esi",
+                "priority": ""
+            },
+            {
+                "address": "0x14001222a",
+                "instruction": "add r14, 10h",
+                "priority": ""
+            },
+            {
+                "address": "0x14001222e",
+                "instruction": "cmp esi, [rbp+0]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012231",
+                "instruction": "jl short loc_1400121F4",
+                "priority": ""
+            },
+            {
+                "address": "0x140012233",
+                "instruction": "mov r14, [rsp+38h+arg_10]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012238",
+                "instruction": "mov rsi, [rsp+38h+arg_8]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001223d",
+                "instruction": "mov r15, [rsp+38h+var_18]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012242",
+                "instruction": "mov rax, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012245",
+                "instruction": "mov rbp, [rsp+38h+arg_0]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224a",
+                "instruction": "test rbx, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224d",
+                "instruction": "jz short loc_1400122BC",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224f",
+                "instruction": "nop",
+                "priority": ""
+            },
+            {
+                "address": "0x140012250",
+                "instruction": "mov rax, [rax+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012254",
+                "instruction": "inc edi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012256",
+                "instruction": "test rax, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140012259",
+                "instruction": "jnz short loc_140012250",
+                "priority": "Low"
+            },
+            {
+                "address": "0x14001225b",
+                "instruction": "nop dword ptr [rax+rax+00h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012260",
+                "instruction": "cmp dword ptr [rbx], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012266",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x140012268",
+                "instruction": "cmp dword ptr [rbx+14h], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x14001226f",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x140012271",
+                "instruction": "cmp dword ptr [rbx+18h], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012278",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x14001227a",
+                "instruction": "cmp dword ptr [rbx+1Ch], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012281",
+                "instruction": "jz short loc_140012293",
+                "priority": ""
+            },
+            {
+                "address": "0x140012283",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x140012288",
+                "instruction": "mov r8d, edi; num",
+                "priority": ""
+            },
+            {
+                "address": "0x14001228b",
+                "instruction": "mov v, rbx; pn",
+                "priority": ""
+            },
+            {
+                "address": "0x14001228e",
+                "instruction": "call j_?_RTC_AllocaFailure@@YAXPEAXPEAU_RTC_ALLOCA_NODE@@H@Z; _RTC_AllocaFailure(void *,_RTC_ALLOCA_NODE *,int)",
+                "priority": ""
+            },
+            {
+                "address": "0x140012293",
+                "instruction": "mov rax, [rbx+0Ch]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012297",
+                "instruction": "cmp dword ptr [rax+rbx-4], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x14001229f",
+                "instruction": "jz short loc_1400122B1",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a1",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a6",
+                "instruction": "mov r8d, edi; num",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a9",
+                "instruction": "mov v, rbx; pn",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122ac",
+                "instruction": "call j_?_RTC_AllocaFailure@@YAXPEAXPEAU_RTC_ALLOCA_NODE@@H@Z; _RTC_AllocaFailure(void *,_RTC_ALLOCA_NODE *,int)",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b1",
+                "instruction": "mov rbx, [rbx+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b5",
+                "instruction": "dec edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b7",
+                "instruction": "test rbx, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122ba",
+                "instruction": "jnz short loc_140012260",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122bc",
+                "instruction": "add rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c0",
+                "instruction": "pop rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c1",
+                "instruction": "pop rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c2",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Medium"
+    },
+    {
+        "function_name": "_RTC_CheckStackVars2",
+        "instructions": [
+            {
+                "address": "0x1400121c0",
+                "instruction": "push rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c2",
+                "instruction": "push rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c3",
+                "instruction": "sub rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121c7",
+                "instruction": "mov [rsp+38h+arg_0], rbp",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121cc",
+                "instruction": "xor edi, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ce",
+                "instruction": "mov [rsp+38h+var_18], r15",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d3",
+                "instruction": "mov rbx, allocaList",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d6",
+                "instruction": "mov rbp, v",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121d9",
+                "instruction": "mov r15, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121dc",
+                "instruction": "test v, v",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121df",
+                "instruction": "jz short loc_14001223D",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e1",
+                "instruction": "mov [rsp+38h+arg_8], rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e6",
+                "instruction": "mov esi, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121e8",
+                "instruction": "cmp [v], edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ea",
+                "instruction": "jle short loc_140012238",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121ec",
+                "instruction": "mov [rsp+38h+arg_10], r14",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f1",
+                "instruction": "mov r14d, edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f4",
+                "instruction": "mov v, [rbp+8]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121f8",
+                "instruction": "movsxd frame, dword ptr [v+r14]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400121fc",
+                "instruction": "cmp dword ptr [frame+r15-4], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012205",
+                "instruction": "jnz short loc_140012219",
+                "priority": ""
+            },
+            {
+                "address": "0x140012207",
+                "instruction": "movsxd rax, dword ptr [v+r14+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001220c",
+                "instruction": "add rax, frame",
+                "priority": ""
+            },
+            {
+                "address": "0x14001220f",
+                "instruction": "cmp dword ptr [rax+r15], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012217",
+                "instruction": "jz short loc_140012228",
+                "priority": ""
+            },
+            {
+                "address": "0x140012219",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x14001221e",
+                "instruction": "mov v, [v+r14+8]; varname",
+                "priority": ""
+            },
+            {
+                "address": "0x140012223",
+                "instruction": "call j_?_RTC_StackFailure@@YAXPEAXPEBD@Z; _RTC_StackFailure(void *,char const *)",
+                "priority": ""
+            },
+            {
+                "address": "0x140012228",
+                "instruction": "inc esi",
+                "priority": ""
+            },
+            {
+                "address": "0x14001222a",
+                "instruction": "add r14, 10h",
+                "priority": ""
+            },
+            {
+                "address": "0x14001222e",
+                "instruction": "cmp esi, [rbp+0]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012231",
+                "instruction": "jl short loc_1400121F4",
+                "priority": ""
+            },
+            {
+                "address": "0x140012233",
+                "instruction": "mov r14, [rsp+38h+arg_10]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012238",
+                "instruction": "mov rsi, [rsp+38h+arg_8]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001223d",
+                "instruction": "mov r15, [rsp+38h+var_18]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012242",
+                "instruction": "mov rax, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012245",
+                "instruction": "mov rbp, [rsp+38h+arg_0]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224a",
+                "instruction": "test rbx, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224d",
+                "instruction": "jz short loc_1400122BC",
+                "priority": ""
+            },
+            {
+                "address": "0x14001224f",
+                "instruction": "nop",
+                "priority": ""
+            },
+            {
+                "address": "0x140012250",
+                "instruction": "mov rax, [rax+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012254",
+                "instruction": "inc edi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012256",
+                "instruction": "test rax, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140012259",
+                "instruction": "jnz short loc_140012250",
+                "priority": ""
+            },
+            {
+                "address": "0x14001225b",
+                "instruction": "nop dword ptr [rax+rax+00h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012260",
+                "instruction": "cmp dword ptr [rbx], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012266",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x140012268",
+                "instruction": "cmp dword ptr [rbx+14h], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x14001226f",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x140012271",
+                "instruction": "cmp dword ptr [rbx+18h], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012278",
+                "instruction": "jnz short loc_140012283",
+                "priority": ""
+            },
+            {
+                "address": "0x14001227a",
+                "instruction": "cmp dword ptr [rbx+1Ch], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x140012281",
+                "instruction": "jz short loc_140012293",
+                "priority": ""
+            },
+            {
+                "address": "0x140012283",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x140012288",
+                "instruction": "mov r8d, edi; num",
+                "priority": ""
+            },
+            {
+                "address": "0x14001228b",
+                "instruction": "mov v, rbx; pn",
+                "priority": ""
+            },
+            {
+                "address": "0x14001228e",
+                "instruction": "call j_?_RTC_AllocaFailure@@YAXPEAXPEAU_RTC_ALLOCA_NODE@@H@Z; _RTC_AllocaFailure(void *,_RTC_ALLOCA_NODE *,int)",
+                "priority": ""
+            },
+            {
+                "address": "0x140012293",
+                "instruction": "mov rax, [rbx+0Ch]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012297",
+                "instruction": "cmp dword ptr [rax+rbx-4], 0CCCCCCCCh",
+                "priority": ""
+            },
+            {
+                "address": "0x14001229f",
+                "instruction": "jz short loc_1400122B1",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a1",
+                "instruction": "mov frame, [rsp+38h]; retaddr",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a6",
+                "instruction": "mov r8d, edi; num",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122a9",
+                "instruction": "mov v, rbx; pn",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122ac",
+                "instruction": "call j_?_RTC_AllocaFailure@@YAXPEAXPEAU_RTC_ALLOCA_NODE@@H@Z; _RTC_AllocaFailure(void *,_RTC_ALLOCA_NODE *,int)",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b1",
+                "instruction": "mov rbx, [rbx+4]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b5",
+                "instruction": "dec edi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122b7",
+                "instruction": "test rbx, rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122ba",
+                "instruction": "jnz short loc_140012260",
+                "priority": "Low"
+            },
+            {
+                "address": "0x1400122bc",
+                "instruction": "add rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c0",
+                "instruction": "pop rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c1",
+                "instruction": "pop rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400122c2",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Medium"
+    },
+    {
+        "function_name": "find_pe_section",
+        "instructions": [
+            {
+                "address": "0x140013500",
+                "instruction": "mov [rsp+rva], rdx",
+                "priority": ""
+            },
+            {
+                "address": "0x140013505",
+                "instruction": "mov [rsp+image_base], rcx",
+                "priority": ""
+            },
+            {
+                "address": "0x14001350a",
+                "instruction": "sub rsp, 38h",
+                "priority": ""
+            },
+            {
+                "address": "0x14001350e",
+                "instruction": "mov rax, [rsp+38h+image_base]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013513",
+                "instruction": "mov [rsp+38h+dos_header], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013518",
+                "instruction": "mov rax, [rsp+38h+dos_header]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001351d",
+                "instruction": "movsxd rax, dword ptr [rax+3Ch]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013521",
+                "instruction": "mov rcx, [rsp+38h+dos_header]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013526",
+                "instruction": "add rcx, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013529",
+                "instruction": "mov rax, rcx",
+                "priority": ""
+            },
+            {
+                "address": "0x14001352c",
+                "instruction": "mov [rsp+38h+nt_header_address], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013531",
+                "instruction": "mov rax, [rsp+38h+nt_header_address]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013536",
+                "instruction": "mov [rsp+38h+nt_header], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x14001353b",
+                "instruction": "mov rax, [rsp+38h+nt_header]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013540",
+                "instruction": "movzx eax, word ptr [rax+14h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013544",
+                "instruction": "mov rcx, [rsp+38h+nt_header]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013549",
+                "instruction": "lea rax, [rcx+rax+18h]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001354e",
+                "instruction": "mov [rsp+38h+first_section], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013553",
+                "instruction": "mov rax, [rsp+38h+nt_header]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013558",
+                "instruction": "movzx eax, word ptr [rax+6]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001355c",
+                "instruction": "imul rax, 28h ; '('",
+                "priority": ""
+            },
+            {
+                "address": "0x140013560",
+                "instruction": "mov rcx, [rsp+38h+first_section]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013565",
+                "instruction": "add rcx, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013568",
+                "instruction": "mov rax, rcx",
+                "priority": ""
+            },
+            {
+                "address": "0x14001356b",
+                "instruction": "mov [rsp+38h+last_section], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013570",
+                "instruction": "mov rax, [rsp+38h+first_section]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013575",
+                "instruction": "mov [rsp+38h+it], rax",
+                "priority": "Medium"
+            },
+            {
+                "address": "0x140013579",
+                "instruction": "jmp short loc_140013587",
+                "priority": ""
+            },
+            {
+                "address": "0x14001357b",
+                "instruction": "mov rax, [rsp+38h+it]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001357f",
+                "instruction": "add rax, 28h ; '('",
+                "priority": ""
+            },
+            {
+                "address": "0x140013583",
+                "instruction": "mov [rsp+38h+it], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013587",
+                "instruction": "mov rax, [rsp+38h+last_section]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001358c",
+                "instruction": "cmp [rsp+38h+it], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013590",
+                "instruction": "jz short loc_1400135BF",
+                "priority": ""
+            },
+            {
+                "address": "0x140013592",
+                "instruction": "mov rax, [rsp+38h+it]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013596",
+                "instruction": "mov eax, [rax+0Ch]",
+                "priority": ""
+            },
+            {
+                "address": "0x140013599",
+                "instruction": "cmp [rsp+38h+rva], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x14001359e",
+                "instruction": "jb short loc_1400135BD",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135a0",
+                "instruction": "mov rax, [rsp+38h+it]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135a4",
+                "instruction": "mov eax, [rax+0Ch]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135a7",
+                "instruction": "mov rcx, [rsp+38h+it]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135ab",
+                "instruction": "add eax, [rcx+8]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135ae",
+                "instruction": "mov eax, eax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135b0",
+                "instruction": "cmp [rsp+38h+rva], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135b5",
+                "instruction": "jnb short loc_1400135BD",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135b7",
+                "instruction": "mov rax, [rsp+38h+it]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135bb",
+                "instruction": "jmp short loc_1400135C1",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135bd",
+                "instruction": "jmp short loc_14001357B",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135bf",
+                "instruction": "xor eax, eax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135c1",
+                "instruction": "add rsp, 38h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400135c5",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Medium"
+    },
+    {
+        "function_name": "_RTC_Initialize",
+        "instructions": [
+            {
+                "address": "0x1400144d0",
+                "instruction": "mov [rsp+arg_0], rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144d5",
+                "instruction": "push rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144d6",
+                "instruction": "sub rsp, 20h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144da",
+                "instruction": "lea rbx, unk_14001C030",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144e1",
+                "instruction": "lea rdi, __rtc_izz",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144e8",
+                "instruction": "cmp rbx, rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144eb",
+                "instruction": "jnb short loc_140014507",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144ed",
+                "instruction": "nop dword ptr [rax]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144f0",
+                "instruction": "mov rax, [rbx]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144f3",
+                "instruction": "test rax, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144f6",
+                "instruction": "jz short loc_1400144FE",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144f8",
+                "instruction": "call cs:__guard_dispatch_icall_fptr",
+                "priority": ""
+            },
+            {
+                "address": "0x1400144fe",
+                "instruction": "add rbx, 8",
+                "priority": ""
+            },
+            {
+                "address": "0x140014502",
+                "instruction": "cmp rbx, rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x140014505",
+                "instruction": "jb short loc_1400144F0",
+                "priority": "Medium"
+            },
+            {
+                "address": "0x140014507",
+                "instruction": "mov rbx, [rsp+28h+arg_0]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001450c",
+                "instruction": "add rsp, 20h",
+                "priority": ""
+            },
+            {
+                "address": "0x140014510",
+                "instruction": "pop rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x140014511",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Medium"
+    },
+    {
+        "function_name": "_RTC_Terminate",
+        "instructions": [
+            {
+                "address": "0x140014530",
+                "instruction": "mov [rsp+arg_0], rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x140014535",
+                "instruction": "push rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x140014536",
+                "instruction": "sub rsp, 20h",
+                "priority": ""
+            },
+            {
+                "address": "0x14001453a",
+                "instruction": "lea rbx, unk_14001C360",
+                "priority": ""
+            },
+            {
+                "address": "0x140014541",
+                "instruction": "lea rdi, __rtc_tzz",
+                "priority": ""
+            },
+            {
+                "address": "0x140014548",
+                "instruction": "cmp rbx, rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x14001454b",
+                "instruction": "jnb short loc_140014567",
+                "priority": ""
+            },
+            {
+                "address": "0x14001454d",
+                "instruction": "nop dword ptr [rax]",
+                "priority": ""
+            },
+            {
+                "address": "0x140014550",
+                "instruction": "mov rax, [rbx]",
+                "priority": ""
+            },
+            {
+                "address": "0x140014553",
+                "instruction": "test rax, rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140014556",
+                "instruction": "jz short loc_14001455E",
+                "priority": ""
+            },
+            {
+                "address": "0x140014558",
+                "instruction": "call cs:__guard_dispatch_icall_fptr",
+                "priority": ""
+            },
+            {
+                "address": "0x14001455e",
+                "instruction": "add rbx, 8",
+                "priority": ""
+            },
+            {
+                "address": "0x140014562",
+                "instruction": "cmp rbx, rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x140014565",
+                "instruction": "jb short loc_140014550",
+                "priority": "Medium"
+            },
+            {
+                "address": "0x140014567",
+                "instruction": "mov rbx, [rsp+28h+arg_0]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001456c",
+                "instruction": "add rsp, 20h",
+                "priority": ""
+            },
+            {
+                "address": "0x140014570",
+                "instruction": "pop rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x140014571",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Medium"
+    },
+    {
+        "function_name": "_getMemBlockDataString",
+        "instructions": [
+            {
+                "address": "0x140012e40",
+                "instruction": "mov [rsp+arg_8], valbuff",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e45",
+                "instruction": "push rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e46",
+                "instruction": "push r12",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e48",
+                "instruction": "push r13",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e4a",
+                "instruction": "push r15",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e4c",
+                "instruction": "sub rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e50",
+                "instruction": "xor r15d, r15d",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e53",
+                "instruction": "mov esi, 10h",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e58",
+                "instruction": "cmp datasize, rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e5b",
+                "instruction": "mov r12, data",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e5e",
+                "instruction": "mov rax, valbuff",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e61",
+                "instruction": "mov r13, printbuff",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e64",
+                "instruction": "cmovb rsi, datasize",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e68",
+                "instruction": "test rsi, rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e6b",
+                "instruction": "jz short loc_140012EE7",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e6d",
+                "instruction": "mov [rsp+48h+arg_0], rbx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e72",
+                "instruction": "sub r12, printbuff",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e75",
+                "instruction": "mov [rsp+48h+arg_10], rbp",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e7a",
+                "instruction": "mov r15, rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e7d",
+                "instruction": "mov [rsp+48h+arg_18], rdi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e82",
+                "instruction": "mov rbp, valbuff",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e85",
+                "instruction": "mov [rsp+48h+var_28], r14",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e8a",
+                "instruction": "mov rdi, printbuff",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e8d",
+                "instruction": "mov r14d, 31h ; '1'",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e93",
+                "instruction": "nop dword ptr [rax+00h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012e97",
+                "instruction": "nop word ptr [rax+rax+00000000h]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ea0",
+                "instruction": "movzx ebx, byte ptr [rdi+r12]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ea5",
+                "instruction": "lea data, a2x; \"%.2X \"",
+                "priority": ""
+            },
+            {
+                "address": "0x140012eac",
+                "instruction": "mov r9d, ebx",
+                "priority": ""
+            },
+            {
+                "address": "0x140012eaf",
+                "instruction": "mov valbuff, r14; _BufferCount",
+                "priority": ""
+            },
+            {
+                "address": "0x140012eb2",
+                "instruction": "mov printbuff, rbp; _Buffer",
+                "priority": ""
+            },
+            {
+                "address": "0x140012eb5",
+                "instruction": "call j_sprintf_s",
+                "priority": ""
+            },
+            {
+                "address": "0x140012eba",
+                "instruction": "sub r14, 3",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ebe",
+                "instruction": "mov [rdi], bl",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ec0",
+                "instruction": "add rbp, 3",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ec4",
+                "instruction": "lea rdi, [rdi+1]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ec8",
+                "instruction": "sub rsi, 1",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ecc",
+                "instruction": "jnz short loc_140012EA0",
+                "priority": "Low"
+            },
+            {
+                "address": "0x140012ece",
+                "instruction": "mov r14, [rsp+48h+var_28]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ed3",
+                "instruction": "mov rdi, [rsp+48h+arg_18]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ed8",
+                "instruction": "mov rbp, [rsp+48h+arg_10]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012edd",
+                "instruction": "mov rbx, [rsp+48h+arg_0]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ee2",
+                "instruction": "mov rax, [rsp+48h+arg_8]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ee7",
+                "instruction": "lea rax, [rax+r15*2]",
+                "priority": ""
+            },
+            {
+                "address": "0x140012eeb",
+                "instruction": "mov byte ptr [r15+r13], 0",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ef0",
+                "instruction": "mov byte ptr [r15+rax], 0",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ef5",
+                "instruction": "add rsp, 28h",
+                "priority": ""
+            },
+            {
+                "address": "0x140012ef9",
+                "instruction": "pop r15",
+                "priority": ""
+            },
+            {
+                "address": "0x140012efb",
+                "instruction": "pop r13",
+                "priority": ""
+            },
+            {
+                "address": "0x140012efd",
+                "instruction": "pop r12",
+                "priority": ""
+            },
+            {
+                "address": "0x140012eff",
+                "instruction": "pop rsi",
+                "priority": ""
+            },
+            {
+                "address": "0x140012f00",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Low"
+    },
+    {
+        "function_name": "__scrt_acquire_startup_lock",
+        "instructions": [
+            {
+                "address": "0x1400136c0",
+                "instruction": "sub rsp, 48h",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136c4",
+                "instruction": "call j___scrt_is_ucrt_dll_in_use",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136c9",
+                "instruction": "test eax, eax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136cb",
+                "instruction": "jnz short loc_1400136D1",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136cd",
+                "instruction": "xor al, al",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136cf",
+                "instruction": "jmp short loc_14001371D",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136d1",
+                "instruction": "call j_NtCurrentTeb",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136d6",
+                "instruction": "mov rax, [rax+8]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136da",
+                "instruction": "mov [rsp+48h+this_fiber], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136df",
+                "instruction": "mov rax, [rsp+48h+this_fiber]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136e4",
+                "instruction": "mov [rsp+48h+var_18], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136e9",
+                "instruction": "lea rcx, __scrt_native_startup_lock",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136f0",
+                "instruction": "xor eax, eax",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136f2",
+                "instruction": "mov rdx, [rsp+48h+var_18]",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136f7",
+                "instruction": "lock cmpxchg [rcx], rdx",
+                "priority": ""
+            },
+            {
+                "address": "0x1400136fc",
+                "instruction": "mov [rsp+48h+owning_fiber], rax",
+                "priority": "Low"
+            },
+            {
+                "address": "0x140013701",
+                "instruction": "cmp [rsp+48h+owning_fiber], 0",
+                "priority": ""
+            },
+            {
+                "address": "0x140013707",
+                "instruction": "jz short loc_14001371B",
+                "priority": ""
+            },
+            {
+                "address": "0x140013709",
+                "instruction": "mov rax, [rsp+48h+owning_fiber]",
+                "priority": ""
+            },
+            {
+                "address": "0x14001370e",
+                "instruction": "cmp [rsp+48h+this_fiber], rax",
+                "priority": ""
+            },
+            {
+                "address": "0x140013713",
+                "instruction": "jnz short loc_140013719",
+                "priority": ""
+            },
+            {
+                "address": "0x140013715",
+                "instruction": "mov al, 1",
+                "priority": ""
+            },
+            {
+                "address": "0x140013717",
+                "instruction": "jmp short loc_14001371D",
+                "priority": ""
+            },
+            {
+                "address": "0x140013719",
+                "instruction": "jmp short loc_1400136DF",
+                "priority": ""
+            },
+            {
+                "address": "0x14001371b",
+                "instruction": "xor al, al",
+                "priority": ""
+            },
+            {
+                "address": "0x14001371d",
+                "instruction": "add rsp, 48h",
+                "priority": ""
+            },
+            {
+                "address": "0x140013721",
+                "instruction": "retn",
+                "priority": ""
+            }
+        ],
+        "highest_priority": "Low"
+    }
+]
