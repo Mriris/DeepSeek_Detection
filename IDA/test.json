@@ -1,0 +1,34 @@
+{
+  "functions": [
+    "main",
+    "user_input_handler",
+    "vulnerable_function",
+    "process_data",
+    "sanitize_input"
+  ],
+  "strings": [
+    "system(",
+    "exec(",
+    "dangerous_function",
+    "password123",
+    "C:\\Users\\admin\\data.txt",
+    "http://example.com/malicious"
+  ],
+  "calls": [
+    {"call_from": "user_input_handler", "call_to": "vulnerable_function"},
+    {"call_from": "process_data", "call_to": "dangerous_function"},
+    {"call_from": "sanitize_input", "call_to": "user_input_handler"}
+  ],
+  "potential_vulnerabilities": [
+    {
+      "type": "SQL Injection",
+      "description": "A possible SQL injection vulnerability due to unsafe concatenation of user input into SQL queries.",
+      "location": "user_input_handler function"
+    },
+    {
+      "type": "Command Injection",
+      "description": "Risk of command injection through the use of system() and exec() with user-controlled input.",
+      "location": "vulnerable_function function"
+    }
+  ]
+}
