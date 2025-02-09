@@ -4,7 +4,6 @@ import json
 # 全局变量，存储对话历史
 messages = []
 
-
 def load_model():
     """
     加载 DeepSeek 模型，并维护对话上下文
@@ -26,27 +25,19 @@ def load_model():
         print("没有找到匹配的风险指令！")
         return
 
-    # # 打印索引信息用于调试
-    # print(f"风险指令：{highest_priority_instruction['instruction']}")
-    # print(f"风险指令索引位置：{instruction_index}")
-
     # 获取上下文指令（前文和后文）
     previous_instructions, next_instructions = get_context_instructions(instruction_index, features['all_instructions'],
                                                                         context_range=10)
-
-    # # 打印上下文信息用于调试
-    # print(f"前文指令: {previous_instructions}")
-    # print(f"后文指令: {next_instructions}")
 
     # 只保留 instruction 字段
     previous_instructions = [instr['instruction'] for instr in previous_instructions]
     next_instructions = [instr['instruction'] for instr in next_instructions]
 
     # 生成消息内容：包括风险指令，上文指令，下文指令
-    message_content = f"请检测以下特征(汇编指令)的潜在漏洞。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
+    message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
 
     # 打印用户输入内容
-    print("用户输入的内容：")
+    print("输入内容：")
     print(message_content)  # 打印输入的内容
 
     # 记录用户输入
@@ -67,18 +58,37 @@ def detect_vulnerability():
     让模型分析漏洞，并且在对话历史中存储其回答
     """
     response = load_model()
-    print("漏洞检测结果：")
+    print("检测结果：")
     if 'message' in response:
-        print(response['message']['content'])
+        result_content = response['message']['content']
+        print(result_content)  # 在控制台输出检测结果
+
+        # 提取 <think> 后的内容
+        think_end_index = result_content.find('</think>') + len('</think>')
+        content_after_think = result_content[think_end_index:].strip()  # 获取 <think> 后的内容
+
+        # 保存为 Markdown 文件
+        save_as_md(content_after_think)
     else:
         print("未找到漏洞检测结果。")
+
+
+def save_as_md(content):
+    """
+    将内容保存为 Markdown 文件
+    """
+    md_file = r"example/test1/result.md"
+    with open(md_file, 'w', encoding='utf-8') as f:
+        f.write(content)  # 直接写入原始的 Markdown 内容
+
+    print(f"检测结果已保存为 Markdown 文件：{md_file}")
 
 
 def load_features():
     """
     从 JSON 文件加载特征
     """
-    with open(r'example/test2/vulfi_extracted_data.json', 'r') as f:
+    with open(r'example/test1/vulfi_extracted_data.json', 'r') as f:
         features = json.load(f)
 
     # 获取第一个函数
@@ -118,12 +128,9 @@ def get_context_instructions(instruction_index, all_instructions, context_range=
     # 获取下文指令范围
     end_index = min(len(all_instructions), instruction_index + context_range + 1)  # 防止超出总长度
 
-    # 打印调试信息，查看上下文范围是否正确
-    print(f"上下文提取范围：开始索引 = {start_index}, 结束索引 = {end_index}")
-
-    # 上文指令是从当前指令索引向前提取，确保前 2 条指令
+    # 上文指令是从当前指令索引向前提取
     previous_instructions = all_instructions[start_index:instruction_index]
-    # 下文指令是从当前指令索引向后提取，确保后 2 条指令
+    # 下文指令是从当前指令索引向后提取
     next_instructions = all_instructions[instruction_index + 1:end_index]
 
     return previous_instructions, next_instructions
