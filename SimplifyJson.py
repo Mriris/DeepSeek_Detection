@@ -55,6 +55,7 @@ def extract_vulfi_data(vulfi_data, extracted_functions):
     for vulfi_item in vulfi_data:
         function_name = vulfi_item['FoundIn']
         address = vulfi_item['Address']
+        issue_name = vulfi_item['IssueName']  # 提取 IssueName
         # 查找对应的函数数据
         function_data = next((func for func in extracted_functions if func['function_name'] == function_name), None)
 
@@ -72,13 +73,15 @@ def extract_vulfi_data(vulfi_data, extracted_functions):
                     instructions_with_priority.append({
                         'address': instruction_address,
                         'instruction': formatted_instruction,
-                        'priority': vulfi_item['Priority']
+                        'priority': vulfi_item['Priority'],
+                        'issue_name': issue_name  # 添加 IssueName 字段
                     })
                 else:
                     instructions_with_priority.append({
                         'address': instruction_address,
                         'instruction': formatted_instruction,
-                        'priority': ''
+                        'priority': '',
+                        'issue_name': ''  # 如果没有匹配的优先级，保留空值
                     })
 
             # 获取该函数的最高优先级
@@ -104,9 +107,9 @@ def save_to_json(data, output_file_path):
 
 # 主函数
 def main():
-    vulfi_file_path = r'example/test3.386'  # VulFi结果文件路径
-    extracted_functions_file_path = r'IDA/extracted_functions.json'  # extracted_functions.json文件路径
-    output_file_path = r'example/vulfi_extracted_data.json'  # 输出的JSON文件路径
+    vulfi_file_path = r'example/test2/test2.386'  # VulFi结果文件路径
+    extracted_functions_file_path = r'example/test2/extracted_functions.json'  # extracted_functions.json文件路径
+    output_file_path = r'example/test2/vulfi_extracted_data.json'  # 输出的JSON文件路径
 
     vulfi_data = read_vulfi_file(vulfi_file_path)
     extracted_functions = read_extracted_functions(extracted_functions_file_path)
