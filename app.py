@@ -119,9 +119,9 @@ def index():
 def portfolio_details():
     return render_template('detective.html')
 
-@app.route('/service-details')
+@app.route('/project-details')
 def service_details():
-    return render_template('service-details.html')
+    return render_template('project-details.html')
 
 @app.route('/detect', methods=['POST'])
 def detect():
