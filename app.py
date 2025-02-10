@@ -115,6 +115,14 @@ def get_context_instructions(instruction_index, all_instructions, context_range=
 def index():
     return render_template('index.html')
 
+@app.route('/portfolio-details')
+def portfolio_details():
+    return render_template('portfolio-details.html')
+
+@app.route('/service-details')
+def service_details():
+    return render_template('service-details.html')
+
 @app.route('/detect', methods=['POST'])
 def detect():
     try:
