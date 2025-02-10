@@ -28,6 +28,8 @@
     <!-- Main CSS File -->
     <link href="../static/assets/css/main.css" rel="stylesheet">
 
+    <script src="https://cdn.jsdelivr.net/npm/marked@2.0.0/lib/marked.min.js"></script>
+
 
     <!-- =======================================================
     * Template Name: Arsha
@@ -531,17 +533,22 @@
         }
     });
 
-    // 发送请求进行漏洞检测，并显示检测结果
     function startDetection() {
         const formData = new FormData(document.getElementById('detect-form'));
+
+        // 调试：查看表单数据是否成功提交
+        console.log('上传的表单数据:', formData);
 
         fetch('/detect', {
             method: 'POST',
             body: formData
         })
-            .then(response => response.json())
+            .then(response => {
+                console.log('服务器响应:', response);  // 调试：检查响应
+                return response.json();
+            })
             .then(data => {
-                console.log(data);  // 输出后端返回的数据，帮助调试
+                console.log('后端返回的数据:', data);  // 调试：输出返回的 JSON 数据
 
                 if (data.result) {
                     let resultContent = data.result;
@@ -550,16 +557,37 @@
                     const thinkStart = resultContent.indexOf('<think>');
                     const thinkEnd = resultContent.indexOf('</think>');
 
+                    // 调试：检查原始内容及其格式
+                    console.log('原始返回结果:', resultContent);
                     if (thinkStart !== -1 && thinkEnd !== -1) {
                         resultContent = resultContent.slice(thinkEnd + '</think>'.length);  // 获取 <think> 标签后的内容
+                        // console.log('去掉 <think> 标签后的内容:', resultContent);  // 调试：去掉 <think> 后的内容
                     }
 
-                    // 显示漏洞检测结果
-                    document.getElementById('detection-result').textContent = resultContent;
+                    // 检查 marked 是否是函数
+                    console.log('marked:', marked);
+                    if (typeof marked !== 'function') {
+                        console.error('marked.js 没有正确加载，marked 不是一个函数');
+                    } else {
+                        // 使用 marked.js 将 Markdown 转换为 HTML
+                        const htmlContent = marked(resultContent);
 
-                    // 修改按钮为“重置”
-                    document.getElementById('action-btn').textContent = '重置';
-                    currentStep = 'reset';  // 更新按钮状态
+                        // 调试：输出转换后的 HTML 内容
+                        console.log('转换后的 HTML:', htmlContent);
+
+                        // 确保我们正在将 HTML 内容插入到正确的元素
+                        const detectionResultElement = document.getElementById('detection-result');
+                        if (detectionResultElement) {
+                            detectionResultElement.innerHTML = htmlContent;  // 将 HTML 插入页面
+                            console.log('内容已成功插入到页面中');
+                        } else {
+                            console.error('未找到 #detection-result 元素');
+                        }
+
+                        // 修改按钮为“重置”
+                        document.getElementById('action-btn').textContent = '重置';
+                        currentStep = 'reset';  // 更新按钮状态
+                    }
                 } else {
                     console.error("未返回漏洞检测结果");
                 }
