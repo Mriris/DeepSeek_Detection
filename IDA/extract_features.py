@@ -1,3 +1,4 @@
+#"C:\Application\IDA Professional 9.0\ida.exe" -A -S"C:\0Program\Python\DeepSeek_Detection\IDA\extract_features.py" "C:\0Program\Python\DeepSeek_Detection\example\test1\ConsoleApplication1.exe"
 import idaapi
 import idautils
 import idc
@@ -34,7 +35,7 @@ def extract_instructions(func_start, func_end):
 
 
 def save_as_json(functions):
-    with open(r'C:\0Program\Python\DeepSeek_Detection\IDA\extracted_functions.json', 'w') as json_file:
+    with open(r'C:\0Program\Python\DeepSeek_Detection\example\test4\extracted_functions.json', 'w') as json_file:
         json.dump(functions, json_file, indent=4)
 
 
@@ -45,3 +46,5 @@ functions = extract_function_info()
 save_as_json(functions)
 
 print("Exported functions to 'extracted_functions.json'")
+
+idc.qexit(0)
