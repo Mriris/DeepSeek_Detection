@@ -887,29 +887,49 @@ section,
   background: color-mix(in srgb, var(--accent-color), transparent 15%);
 }
 
+/* 默认按钮样式 */
 .hero .btn-watch-video {
-  font-size: 16px;
-  transition: 0.5s;
-  margin-left: 25px;
-  color: var(--default-color);
-  font-weight: 600;
+    font-size: 16px;  /* 按钮字体大小 */
+    transition: 0.5s;  /* 平滑过渡 */
+    margin-left: 25px;
+    color: var(--default-color);  /* 默认字体颜色 */
+    font-weight: 600;  /* 加粗文字 */
+    background-color: #56abff;  /* 设置按钮背景色 */
+    padding: 10px 20px;  /* 按钮内边距 */
+    border-radius: 50px;  /* 圆角效果 */
+    text-decoration: none;  /* 移除链接下划线 */
+    display: inline-flex;  /* 设置为行内弹性布局 */
+    align-items: center;  /* 垂直居中 */
+    justify-content: center;  /* 水平居中 */
 }
 
+/* 按钮图标样式 */
 .hero .btn-watch-video i {
-  color: var(--contrast-color);
-  font-size: 32px;
-  transition: 0.3s;
-  line-height: 0;
-  margin-right: 8px;
+    color: var(--contrast-color);  /* 默认图标颜色 */
+    font-size: 32px;  /* 图标大小 */
+    transition: 0.3s;  /* 平滑过渡 */
+    line-height: 0;  /* 使图标居中 */
+    margin-right: 10px;  /* 图标和文字的间距 */
 }
 
+/* 鼠标悬停时的按钮样式 */
 .hero .btn-watch-video:hover {
-  color: var(--accent-color);
+    background-color: #0056b3;  /* 悬停时背景色变深 */
+    color: #ffffff;  /* 悬停时文字颜色 */
+    transform: translateY(-2px);  /* 悬停时按钮浮动 */
 }
 
+/* 鼠标悬停时的图标样式 */
 .hero .btn-watch-video:hover i {
-  color: color-mix(in srgb, var(--accent-color), transparent 15%);
+    color: color-mix(in srgb, var(--accent-color), transparent 15%);  /* 悬停时图标颜色变化 */
 }
+
+/* 鼠标点击时的效果 */
+.hero .btn-watch-video:active {
+    background-color: #004085;  /* 点击时背景色更深 */
+    transform: translateY(0);  /* 点击时恢复原位 */
+}
+
 
 .hero .animated {
   animation: up-down 2s ease-in-out infinite alternate-reverse both;

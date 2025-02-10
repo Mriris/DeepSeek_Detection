@@ -1,265 +1,264 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Service Details - Arsha Bootstrap Template</title>
-    <meta name="description" content="">
-    <meta name="keywords" content="">
+{% block content %}
+    <!-- About Section -->
+    <section id="about" class="about section">
 
-    <!-- Favicons -->
-    <link href="../static/assets/img/favicon.png" rel="icon">
-    <link href="../static/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Jost:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-          rel="stylesheet">
-
-    <!-- Vendor CSS Files -->
-    <link href="../static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../static/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-    <link href="../static/assets/vendor/aos/aos.css" rel="stylesheet">
-    <link href="../static/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
-    <link href="../static/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-
-    <!-- Main CSS File -->
-    <link href="../static/assets/css/main.css" rel="stylesheet">
-
-    <!-- =======================================================
-    * Template Name: Arsha
-    * Template URL: https://bootstrapmade.com/arsha-free-bootstrap-html-template-corporate/
-    * Updated: Aug 07 2024 with Bootstrap v5.3.3
-    * Author: BootstrapMade.com
-    * License: https://bootstrapmade.com/license/
-    ======================================================== -->
-</head>
-
-<body class="service-details-page">
-
-<header id="header" class="header d-flex align-items-center sticky-top">
-    <div class="container-fluid container-xl position-relative d-flex align-items-center">
-
-        <a href="index.html" class="logo d-flex align-items-center me-auto">
-            <!-- Uncomment the line below if you also wish to use an image logo -->
-            <!-- <img src="../static/assets/img/logo.png" alt=""> -->
-            <h1 class="sitename">Arsha</h1>
-        </a>
-
-        <nav id="navmenu" class="navmenu">
-            <ul>
-                <li><a href="#hero">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#services">Services</a></li>
-                <li><a href="#portfolio">Portfolio</a></li>
-                <li><a href="#team">Team</a></li>
-                <li><a href="#pricing">Pricing</a></li>
-                <li class="dropdown"><a href="#"><span>Dropdown</span> <i
-                        class="bi bi-chevron-down toggle-dropdown"></i></a>
-                    <ul>
-                        <li><a href="#">Dropdown 1</a></li>
-                        <li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i
-                                class="bi bi-chevron-down toggle-dropdown"></i></a>
-                            <ul>
-                                <li><a href="#">Deep Dropdown 1</a></li>
-                                <li><a href="#">Deep Dropdown 2</a></li>
-                                <li><a href="#">Deep Dropdown 3</a></li>
-                                <li><a href="#">Deep Dropdown 4</a></li>
-                                <li><a href="#">Deep Dropdown 5</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="#">Dropdown 2</a></li>
-                        <li><a href="#">Dropdown 3</a></li>
-                        <li><a href="#">Dropdown 4</a></li>
-                    </ul>
-                </li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-            <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-        </nav>
-
-        <a class="btn-getstarted" href="#about">Get Started</a>
-
-    </div>
-</header>
-
-<main class="main">
-
-    <!-- Page Title -->
-    <div class="page-title" data-aos="fade">
-        <div class="container">
-            <nav class="breadcrumbs">
-                <ol>
-                    <li><a href="index.html">Home</a></li>
-                    <li class="current">Service Details</li>
-                </ol>
-            </nav>
-            <h1>Service Details</h1>
-        </div>
-    </div><!-- End Page Title -->
-
-    <!-- Service Details Section -->
-    <section id="service-details" class="service-details section">
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+            <h2>关于我们</h2>
+        </div><!-- End Section Title -->
 
         <div class="container">
 
             <div class="row gy-4">
 
-                <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="services-list">
-                        <a href="#" class="active">Web Design</a>
-                        <a href="#">Software Development</a>
-                        <a href="#">Product Management</a>
-                        <a href="#">Graphic Design</a>
-                        <a href="#">Marketing</a>
-                    </div>
-
-                    <h4>Enim qui eos rerum in delectus</h4>
-                    <p>Nam voluptatem quasi numquam quas fugiat ex temporibus quo est. Quia aut quam quod facere ut non
-                        occaecati ut aut. Nesciunt mollitia illum tempore corrupti sed eum reiciendis. Maxime modi
-                        rerum.</p>
-                </div>
-
-                <div class="col-lg-8" data-aos="fade-up" data-aos-delay="200">
-                    <img src="../static/assets/img/services.jpg" alt="" class="img-fluid services-img">
-                    <h3>Temporibus et in vero dicta aut eius lidero plastis trand lined voluptas dolorem ut
-                        voluptas</h3>
+                <div class="col-lg-6 content" data-aos="fade-up" data-aos-delay="100">
                     <p>
-                        Blanditiis voluptate odit ex error ea sed officiis deserunt. Cupiditate non consequatur et
-                        doloremque consequuntur. Accusantium labore reprehenderit error temporibus saepe perferendis
-                        fuga doloribus vero. Qui omnis quo sit. Dolorem architecto eum et quos deleniti officia qui.
+                        我们是一个专注于代码安全性研究的团队，开发了基于深度学习的漏洞检测系统。我们的技术结合了机器学习和静态代码分析，能够有效地识别和修复代码中的潜在安全漏洞。
                     </p>
                     <ul>
-                        <li><i class="bi bi-check-circle"></i> <span>Aut eum totam accusantium voluptatem.</span></li>
-                        <li><i class="bi bi-check-circle"></i> <span>Assumenda et porro nisi nihil nesciunt voluptatibus.</span>
-                        </li>
-                        <li><i class="bi bi-check-circle"></i> <span>Ullamco laboris nisi ut aliquip ex ea</span></li>
+                        <li><i class="bi bi-check2-circle"></i>
+                            <span>通过深度学习技术，自动分析并发现代码中的潜在漏洞。</span></li>
+                        <li><i class="bi bi-check2-circle"></i> <span>结合静态代码分析，精准定位问题代码块。</span></li>
+                        <li><i class="bi bi-check2-circle"></i>
+                            <span>提供详细的漏洞报告和解决方案，帮助开发人员修复漏洞。</span></li>
                     </ul>
+                </div>
+
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
                     <p>
-                        Est reprehenderit voluptatem necessitatibus asperiores neque sed ea illo. Deleniti quam sequi
-                        optio iste veniam repellat odit. Aut pariatur itaque nesciunt fuga.
-                    </p>
-                    <p>
-                        Sunt rem odit accusantium omnis perspiciatis officia. Laboriosam aut consequuntur recusandae
-                        mollitia doloremque est architecto cupiditate ullam. Quia est ut occaecati fuga. Distinctio ex
-                        repellendus eveniet velit sint quia sapiente cumque. Et ipsa perferendis ut nihil. Laboriosam
-                        vel voluptates tenetur nostrum. Eaque iusto cupiditate et totam et quia dolorum in. Sunt
-                        molestiae ipsum at consequatur vero. Architecto ut pariatur autem ad non cumque nesciunt qui
-                        maxime. Sunt eum quia impedit dolore alias explicabo ea.
-                    </p>
+                        我们的团队在安全性分析、深度学习及编程语言理论方面有着丰富的经验，致力于为开发者提供高效、可靠的漏洞检测工具。</p>
+                    <a href="#" class="read-more"><span>了解更多</span><i class="bi bi-arrow-right"></i></a>
                 </div>
 
             </div>
 
         </div>
 
-    </section><!-- /Service Details Section -->
+    </section><!-- /About Section -->
 
-</main>
 
-<footer id="footer" class="footer">
+    <!-- Why Us Section -->
+    <section id="why-us" class="section why-us light-background" data-builder="section">
 
-    <div class="footer-newsletter">
+        <div class="container-fluid">
+
+            <div class="row gy-4">
+
+                <div class="col-lg-7 d-flex flex-column justify-content-center order-2 order-lg-1">
+
+                    <div class="content px-xl-5" data-aos="fade-up" data-aos-delay="100">
+                        <h3><span>基于深度学习的漏洞检测解决方案</span></h3>
+                        <p>
+                            通过我们的漏洞检测系统，结合深度学习和静态代码分析技术，自动化识别代码中的潜在安全漏洞，并提供修复建议，适用于软件开发、代码审查等多个领域。
+                        </p>
+                    </div>
+
+                    <div class="faq-container px-xl-5" data-aos="fade-up" data-aos-delay="200">
+
+                        <div class="faq-item faq-active">
+                            <h3><span>01</span> 漏洞检测系统的核心技术是什么？</h3>
+                            <div class="faq-content">
+                                <p>
+                                    我们的系统结合了深度学习与静态代码分析，通过训练模型自动识别代码中的潜在漏洞和安全风险。</p>
+                            </div>
+                            <i class="faq-toggle bi bi-chevron-right"></i>
+                        </div><!-- End Faq item-->
+
+                        <div class="faq-item">
+                            <h3><span>02</span> 为什么选择我们的方法来检测漏洞？</h3>
+                            <div class="faq-content">
+                                <p>我们的方法结合了最新的深度学习技术，能够自动化分析代码，精确发现常见的漏洞类型，如 SQL
+                                    注入、XSS、缓冲区溢出等，提升代码安全性。</p>
+                            </div>
+                            <i class="faq-toggle bi bi-chevron-right"></i>
+                        </div><!-- End Faq item-->
+
+                        <div class="faq-item">
+                            <h3><span>03</span> 漏洞检测系统的应用领域有哪些？</h3>
+                            <div class="faq-content">
+                                <p>
+                                    我们的技术广泛应用于软件开发、代码审查、持续集成、安全测试等领域，帮助开发人员及时发现和修复漏洞，提升系统安全性。</p>
+                            </div>
+                            <i class="faq-toggle bi bi-chevron-right"></i>
+                        </div><!-- End Faq item-->
+
+                    </div>
+
+                </div>
+
+                <div class="col-lg-5 order-1 order-lg-2 why-us-img">
+                    <img src="../static/assets/img/why-us.png" class="img-fluid" alt="" data-aos="zoom-in"
+                         data-aos-delay="100">
+                </div>
+            </div>
+
+        </div>
+
+    </section><!-- /Why Us Section -->
+
+
+    <section id="services" class="services section bg-black-background">
+
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+            <h2>特点</h2>
+            <p>我们提供以下漏洞检测服务，帮助您在软件开发和代码审查中提升安全性：</p>
+        </div><!-- End Section Title -->
+
         <div class="container">
-            <div class="row justify-content-center text-center">
-                <div class="col-lg-6">
-                    <h4>Join Our Newsletter</h4>
-                    <p>Subscribe to our newsletter and receive the latest news about our products and services!</p>
-                    <form action="forms/newsletter.php" method="post" class="php-email-form">
-                        <div class="newsletter-form"><input type="email" name="email"><input type="submit"
-                                                                                             value="Subscribe"></div>
-                        <div class="loading">Loading</div>
-                        <div class="error-message"></div>
-                        <div class="sent-message">Your subscription request has been sent. Thank you!</div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="container footer-top">
-        <div class="row gy-4">
-            <div class="col-lg-4 col-md-6 footer-about">
-                <a href="index.html" class="d-flex align-items-center">
-                    <span class="sitename">Arsha</span>
-                </a>
-                <div class="footer-contact pt-3">
-                    <p>A108 Adam Street</p>
-                    <p>New York, NY 535022</p>
-                    <p class="mt-3"><strong>Phone:</strong> <span>+1 5589 55488 55</span></p>
-                    <p><strong>Email:</strong> <span>info@example.com</span></p>
-                </div>
-            </div>
+            <div class="row gy-4">
 
-            <div class="col-lg-2 col-md-3 footer-links">
-                <h4>Useful Links</h4>
-                <ul>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">Home</a></li>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">About us</a></li>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">Services</a></li>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">Terms of service</a></li>
-                </ul>
-            </div>
+                <div class="col-xl-3 col-md-6 d-flex" data-aos="fade-up" data-aos-delay="100">
+                    <div class="service-item position-relative">
+                        <div class="icon"><i class="bi bi-shield-lock icon"></i></div>
+                        <h4><a href="" class="stretched-link">漏洞检测</a></h4>
+                        <p>我们的漏洞检测系统结合深度学习与静态分析技术，自动识别代码中的潜在安全漏洞。</p>
+                    </div>
+                </div><!-- End Service Item -->
 
-            <div class="col-lg-2 col-md-3 footer-links">
-                <h4>Our Services</h4>
-                <ul>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">Web Design</a></li>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">Web Development</a></li>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">Product Management</a></li>
-                    <li><i class="bi bi-chevron-right"></i> <a href="#">Marketing</a></li>
-                </ul>
-            </div>
+                <div class="col-xl-3 col-md-6 d-flex" data-aos="fade-up" data-aos-delay="200">
+                    <div class="service-item position-relative">
+                        <div class="icon"><i class="bi bi-file-earmark-lock icon"></i></div>
+                        <h4><a href="" class="stretched-link">安全代码分析</a></h4>
+                        <p>提供全面的代码安全性分析服务，帮助开发者发现并修复常见漏洞，如SQL注入、XSS等。</p>
+                    </div>
+                </div><!-- End Service Item -->
 
-            <div class="col-lg-4 col-md-12">
-                <h4>Follow Us</h4>
-                <p>Cras fermentum odio eu feugiat lide par naso tierra videa magna derita valies</p>
-                <div class="social-links d-flex">
-                    <a href=""><i class="bi bi-twitter-x"></i></a>
-                    <a href=""><i class="bi bi-facebook"></i></a>
-                    <a href=""><i class="bi bi-instagram"></i></a>
-                    <a href=""><i class="bi bi-linkedin"></i></a>
-                </div>
+                <div class="col-xl-3 col-md-6 d-flex" data-aos="fade-up" data-aos-delay="300">
+                    <div class="service-item position-relative">
+                        <div class="icon"><i class="bi bi-graph-up-arrow icon"></i></div>
+                        <h4><a href="" class="stretched-link">安全漏洞优化</a></h4>
+                        <p>基于检测结果提供漏洞修复建议，并帮助您优化代码，提升系统的安全性和可靠性。</p>
+                    </div>
+                </div><!-- End Service Item -->
+
+                <div class="col-xl-3 col-md-6 d-flex" data-aos="fade-up" data-aos-delay="400">
+                    <div class="service-item position-relative">
+                        <div class="icon"><i class="bi bi-patch-check icon"></i></div>
+                        <h4><a href="" class="stretched-link">定制化安全解决方案</a></h4>
+                        <p>根据您的具体需求，提供量身定制的安全解决方案，确保代码审查和漏洞检测的最优效果。</p>
+                    </div>
+                </div><!-- End Service Item -->
+
             </div>
 
         </div>
-    </div>
 
-    <div class="container copyright text-center mt-4">
-        <p>© <span>Copyright</span> <strong class="px-1 sitename">Arsha</strong> <span>All Rights Reserved</span></p>
-        <div class="credits">
-            <!-- All the links in the footer should remain intact. -->
-            <!-- You can delete the links only if you've purchased the pro version. -->
-            <!-- Licensing information: https://bootstrapmade.com/license/ -->
-            <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
-            Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+    </section><!-- /Services Section -->
+
+
+    <!-- Team Section -->
+    <section id="team" class="team section">
+
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+            <h2>团队介绍</h2>
+            <p>
+                我们团队由经验丰富的研究人员组成，专注于漏洞检测与安全技术的研发，致力于为软件开发和代码审查提供高效、安全的解决方案。</p>
+        </div><!-- End Section Title -->
+
+        <div class="container">
+
+            <div class="row gy-4">
+
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="team-member d-flex align-items-start">
+                        <div class="pic"><img src="../static/assets/img/team/team-1.jpg" class="img-fluid" alt=""></div>
+                        <div class="member-info">
+                            <h4>燕庭轩</h4>
+                            <span>项目负责人</span>
+                            <p>专注于深度学习与漏洞检测技术，负责团队的总体规划与技术方向。</p>
+                        </div>
+                    </div>
+                </div><!-- End Team Member -->
+
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="team-member d-flex align-items-start">
+                        <div class="pic"><img src="../static/assets/img/team/team-2.jpg" class="img-fluid" alt=""></div>
+                        <div class="member-info">
+                            <h4>符镇侃</h4>
+                            <span>技术总监</span>
+                            <p>在安全漏洞分析和深度学习领域有丰富经验，负责漏洞检测模型的开发与测试。</p>
+                        </div>
+                    </div>
+                </div><!-- End Team Member -->
+
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="team-member d-flex align-items-start">
+                        <div class="pic"><img src="../static/assets/img/team/team-4.png" class="img-fluid" alt=""></div>
+                        <div class="member-info">
+                            <h4>赵网</h4>
+                            <span>产品经理</span>
+                            <p>擅长数据处理与安全漏洞分析算法，负责产品功能的设计和实现。</p>
+                        </div>
+                    </div>
+                </div><!-- End Team Member -->
+
+                <div class="col-lg-6" data-aos="fade-up" data-aos-delay="400">
+                    <div class="team-member d-flex align-items-start">
+                        <div class="pic"><img src="../static/assets/img/team/team-3.jpg" class="img-fluid" alt=""></div>
+                        <div class="member-info">
+                            <h4>刘昭维</h4>
+                            <span>算法工程师</span>
+                            <p>专注于漏洞检测算法的开发与优化，致力于提高漏洞检测的精确度和效率。</p>
+                        </div>
+                    </div>
+                </div><!-- End Team Member -->
+
+            </div>
+
         </div>
-    </div>
 
-</footer>
+    </section><!-- /Team Section -->
 
-<!-- Scroll Top -->
-<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
-        class="bi bi-arrow-up-short"></i></a>
 
-<!-- Preloader -->
-<div id="preloader"></div>
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials section">
 
-<!-- Vendor JS Files -->
-<script src="../static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../static/assets/vendor/php-email-form/validate.js"></script>
-<script src="../static/assets/vendor/aos/aos.js"></script>
-<script src="../static/assets/vendor/glightbox/js/glightbox.min.js"></script>
-<script src="../static/assets/vendor/swiper/swiper-bundle.min.js"></script>
-<script src="../static/assets/vendor/waypoints/noframework.waypoints.js"></script>
-<script src="../static/assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
-<script src="../static/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+            <h2>指导老师</h2>
+            <p>大连海事大学讲师</p>
+        </div><!-- End Section Title -->
 
-<!-- Main JS File -->
-<script src="../static/assets/js/main.js"></script>
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
 
-</body>
+            <div class="swiper init-swiper">
+                <script type="application/json" class="swiper-config">
+                    {
+                        "loop": true,
+                        "speed": 600,
+                        "autoplay": {
+                            "delay": 5000
+                        },
+                        "slidesPerView": "auto",
+                        "pagination": {
+                            "el": ".swiper-pagination",
+                            "type": "bullets",
+                            "clickable": true
+                        }
+                    }
+                </script>
+                <div class="swiper-wrapper">
 
-</html>
+                    <div class="swiper-slide">
+                        <div class="testimonial-item">
+                            <img src="../static/assets/img/testimonials/zhaozheng.jpg" class="testimonial-img"
+                                 alt="团队成员照片">
+                            <h3>赵正</h3>
+                            <p>
+                                <i class="bi bi-quote quote-icon-left"></i>
+                                <span>我们的漏洞检测系统通过结合深度学习与静态分析技术，显著提升了软件的安全性，帮助开发者发现潜在的安全漏洞。该技术具有广泛的应用潜力，尤其在软件开发和持续集成的安全性提升方面。</span>
+                                <i class="bi bi-quote quote-icon-right"></i>
+                            </p>
+                        </div>
+                    </div><!-- End testimonial item -->
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+
+        </div>
+{% endblock %}
