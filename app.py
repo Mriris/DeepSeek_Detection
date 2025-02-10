@@ -38,6 +38,7 @@ def load_model():
 
     # 生成消息内容：包括风险指令，上文指令，下文指令
     message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
+    # message_content = f"你好，请思考，你是谁"
 
     # 打印用户输入内容
     print("输入内容：")
@@ -49,11 +50,16 @@ def load_model():
     # 调用模型，并传递完整的对话历史
     response = ollama.chat(model='deepseek-r1:14b', messages=messages)
 
+    # 在控制台输出模型的响应
+    print("模型响应：")
+    print(response)
+
     # 记录模型的响应
     if 'message' in response:
         messages.append({'role': 'assistant', 'content': response['message']['content']})
 
     return response
+
 
 def load_features():
     """
@@ -117,7 +123,7 @@ def detect():
 
         if response and 'message' in response:
             result_content = response['message']['content']
-            return render_template('result.html', result=result_content)
+            return jsonify({'result': result_content})  # 确保返回的数据结构包含 result 字段
         else:
             return jsonify({'error': '未找到检测结果'}), 500
     except Exception as e:

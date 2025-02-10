@@ -89,6 +89,9 @@
                         <a href="javascript:void(0);" class="btn-get-started me-3" id="action-btn">确定选择文件</a>
                     </div>
                 </div>
+                <!-- 显示检测结果 -->
+                <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
+
 
                 <!-- 右侧，示意图（可以用任何展示漏洞检测结果的图像或保留默认） -->
                 <div class="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
@@ -528,6 +531,7 @@
         }
     });
 
+    // 发送请求进行漏洞检测，并显示检测结果
     function startDetection() {
         const formData = new FormData(document.getElementById('detect-form'));
 
@@ -537,74 +541,57 @@
         })
             .then(response => response.json())
             .then(data => {
+                console.log(data);  // 输出后端返回的数据，帮助调试
+
                 if (data.result) {
-                    alert("检测完成！结果：" + data.result);
-                } else {
-                    alert("检测失败，请重新上传文件");
-                }
-            })
-            .catch(error => {
-                alert("检测过程中出错：" + error);
-            });
-    }
+                    let resultContent = data.result;
 
-    // 处理文件上传并显示上传的图片
-    function handleFileUpload() {
-        const fileInput = document.getElementById('image-upload');
-        const file = fileInput.files[0];
+                    // 提取 <think> 后的内容
+                    const thinkStart = resultContent.indexOf('<think>');
+                    const thinkEnd = resultContent.indexOf('</think>');
 
-        if (file) {
-            // 显示上传的图片
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                document.getElementById('image-display').src = e.target.result;
-                console.log('图片成功上传并显示。');
-            };
-            reader.readAsDataURL(file);
+                    if (thinkStart !== -1 && thinkEnd !== -1) {
+                        resultContent = resultContent.slice(thinkEnd + '</think>'.length);  // 获取 <think> 标签后的内容
+                    }
 
-            // 修改按钮为“开始增强”
-            document.getElementById('action-btn').textContent = '开始增强';
-            currentStep = 'enhance';  // 更新按钮状态
-        } else {
-            alert("请选择一张图片进行上传！");
-        }
-    }
+                    // 显示漏洞检测结果
+                    document.getElementById('detection-result').textContent = resultContent;
 
-    // 发送请求进行增强，并显示增强后的图像
-    function startEnhancement() {
-        const formData = new FormData(document.getElementById('enhance-form'));
-
-        fetch('/enhance', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.image_url) {
-                    const enhancedImageUrl = data.image_url;
-                    // 设置未处理和增强后的图像大小一致
-                    const unprocessedImage = document.getElementById('image-display');
-                    const enhancedImage = document.getElementById('enhanced-image-display');
-
-                    // 设置宽度和高度一致
-                    unprocessedImage.style.width = "300px";
-                    unprocessedImage.style.height = "300px";
-                    enhancedImage.style.width = "300px";
-                    enhancedImage.style.height = "300px";
-
-                    // 显示增强后的图片
-                    enhancedImage.src = enhancedImageUrl;
-                    enhancedImage.classList.remove('d-none');
                     // 修改按钮为“重置”
                     document.getElementById('action-btn').textContent = '重置';
                     currentStep = 'reset';  // 更新按钮状态
                 } else {
-                    console.error("未返回增强后的图像 URL");
+                    console.error("未返回漏洞检测结果");
                 }
             })
             .catch(error => {
-                console.error('增强图像时出错:', error);
+                console.error('检测过程中出错:', error);
             });
+    }
+
+
+    // 处理文件上传并显示上传的文件
+    function handleFileUpload() {
+        const fileInput = document.getElementById('json-upload');
+        const file = fileInput.files[0];
+
+        if (file) {
+            // 显示上传的文件名
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                console.log('文件成功上传并读取。');
+
+                // 更新显示文本区域（如果需要显示文件内容，可以在这里进行）
+                document.getElementById('file-name').textContent = "已选择文件: " + file.name;
+            };
+            reader.readAsDataURL(file);
+
+            // 修改按钮为“开始检测”
+            document.getElementById('action-btn').textContent = '开始检测';
+            currentStep = 'detect';  // 更新按钮状态
+        } else {
+            alert("请选择一个文件进行上传！");
+        }
     }
 
     // 刷新页面
