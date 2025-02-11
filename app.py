@@ -87,32 +87,29 @@ def read_csv_to_array(csv_file_path):
 
 def load_features():
     """
-    从 JSON 文件加载特征数据。
-    包括所有指令和带优先级的指令。
+    从 JSON 文件加载特征数据，遍历所有函数，提取所有指令以及带优先级的指令
     """
-    # 特征文件路径
     features_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\vulfi_extracted_data.json'
-
-    # 打开并加载 JSON 文件
     with open(features_file_path, 'r') as f:
         features = json.load(f)
 
-    # 获取第一个函数的所有指令
-    first_function = features[0]  # 假设每个文件包含多个函数
-    all_instructions = [instruction for instruction in first_function['instructions']]
+    all_instructions = []
+    priority_instructions = []
 
-    # 提取带有优先级的指令
-    priority_instructions = [
-        {
-            'address': instruction['address'],
-            'instruction': instruction['instruction'],
-            'issue_name': instruction.get('issue_name', ''),  # 获取 issue_name，若无则为空
-            'priority': instruction['priority']  # 获取优先级
-        }
-        for instruction in first_function['instructions'] if instruction['priority']
-    ]
-    print(f"提取的优先级指令: {priority_instructions}")  # 打印提取的优先级指令
-    # 返回所有指令和带优先级的指令
+    # 遍历 JSON 文件中所有的函数数据
+    for func in features:
+        if 'instructions' in func:
+            # 将该函数的所有指令添加到 all_instructions 列表中
+            all_instructions.extend(func['instructions'])
+            # 筛选带有优先级的指令
+            for instr in func['instructions']:
+                if instr.get('priority'):
+                    priority_instructions.append({
+                        'address': instr['address'],
+                        'instruction': instr['instruction'],
+                        'issue_name': instr.get('issue_name', ''),
+                        'priority': instr['priority']
+                    })
     return {
         'all_instructions': all_instructions,
         'priority_instructions': priority_instructions
@@ -202,7 +199,7 @@ def analyze_vulnerability(address):
             if instruction['address'] == address:
                 highest_priority_instruction = instruction
                 break
-
+        print(f"找到的风险指令: {highest_priority_instruction}")  # 输出找到的风险指令
         if not highest_priority_instruction:
             return jsonify({'error': '未找到匹配的风险指令'}), 404
 
