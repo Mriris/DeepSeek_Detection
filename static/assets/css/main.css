@@ -2078,6 +2078,19 @@ section,
   color: var(--accent-color);
 }
 
+.think-content {
+    white-space: pre-wrap; /* 保留换行但允许换行 */
+    word-wrap: break-word; /* 长单词换行 */
+    overflow-wrap: break-word; /* 强制换行 */
+    color: #fff; /* 保留文字颜色为白色 */
+    font-family: monospace; /* 保持等宽字体 */
+    padding: 10px; /* 可以根据需求调整 */
+    border-radius: 5px; /* 保持圆角效果 */
+    background-color: transparent; /* 去除背景颜色 */
+}
+
+
+
 /*--------------------------------------------------------------
 # Starter Section Section
 --------------------------------------------------------------*/

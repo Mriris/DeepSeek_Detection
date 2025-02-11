@@ -26,7 +26,8 @@
             </div>
             <!-- 显示检测结果 -->
             <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
-
+            <!-- 新增：显示漏洞分析结果 -->
+            <div id="analysis-result" style="margin-top: 20px; color: #fff;"></div>
             <!-- 右侧，示意图（可以用任何展示漏洞检测结果的图像或保留默认） -->
             <div class="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
                 <img id="image-display" src="../static/assets/img/hero-img.png" class="img-fluid animated"
@@ -100,7 +101,6 @@
             });
     }
 
-    // 执行漏洞分析
     function analyzeVulnerability(address) {
         console.log("开始分析漏洞:", address);
 
@@ -114,7 +114,31 @@
                     alert("分析失败");
                 } else {
                     console.log("分析结果:", data.result);
-                    // alert("漏洞分析完成");
+
+                    // 提取 <think> 和外部 Markdown 内容
+                    let resultContent = data.result;
+                    let thinkStartIndex = resultContent.indexOf('<think>');
+                    let thinkEndIndex = resultContent.indexOf('</think>');
+
+                    // 提取 think 内容
+                    let thinkContent = '';
+                    let markdownContent = '';
+
+                    if (thinkStartIndex !== -1 && thinkEndIndex !== -1) {
+                        thinkContent = resultContent.slice(thinkStartIndex + 7, thinkEndIndex); // 去除 <think> 和 </think>
+                        markdownContent = resultContent.slice(thinkEndIndex + 8).trim(); // 获取 think 后面的内容
+                    } else {
+                        markdownContent = resultContent; // 如果没有 <think> 标签，直接显示结果
+                    }
+
+                    // 更新分析结果区域
+                    document.getElementById('analysis-result').innerHTML = `
+                <h3>漏洞分析结果</h3>
+                <h4>思考部分</h4>
+                <div class="think-content">${thinkContent}</div>
+                <h4>详细分析</h4>
+                <div id="markdown-content">${marked(markdownContent)}</div>
+            `;
                 }
             })
             .catch(error => {
