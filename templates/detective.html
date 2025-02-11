@@ -56,52 +56,81 @@
         }
     });
 
-function startDetection() {
-    const formData = new FormData(document.getElementById('detect-form'));
+    // 启动检测
+    function startDetection() {
+        const formData = new FormData(document.getElementById('detect-form'));
 
-    fetch('/detect', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("收到的完整数据:", data);  // 调试：查看返回的完整数据
+        fetch('/detect', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("收到的完整数据:", data);
 
-        if (data.error) {
-            console.error("错误:", data.error);
-            alert(data.error || "发生了未知错误");
-        } else {
-            // 调试：输出返回的 csv 数据
-            console.log("收到的 csv 数据:", data.csv);
+                if (data.error) {
+                    console.error("错误:", data.error);
+                    alert(data.error || "发生了未知错误");
+                } else {
+                    let csvData = data.csv;
+                    console.log("收到的 csv 数据:", csvData);
 
-            // 确保 data.csv 是数组
-            if (!Array.isArray(data.csv)) {
-                console.error("data.csv 不是数组，数据格式错误");
-                alert("数据格式错误");
-                return;
-            }
+                    if (!Array.isArray(csvData)) {
+                        console.error("data.csv 不是数组，数据格式错误");
+                        alert("数据格式错误");
+                        return;
+                    }
 
-            // 将 VulFi 数据展示为表格
-            displayResults(data.csv);
+                    // 展示表格
+                    displayResults(csvData);
 
-            // 修改按钮为“重置”
-            document.getElementById('action-btn').textContent = '重置';
-            currentStep = 'reset';  // 更新按钮状态
-        }
-    })
-    .catch(error => {
-        console.error('检测过程中出错:', error);
-        alert('检测过程中出错，请稍后再试');
-    });
-}
+                    // 按钮改为重置
+                    document.getElementById('action-btn').textContent = '重置';
+                    currentStep = 'reset';
+
+                    // 如果选中了某个地址，调用后端进行漏洞分析
+                    if (selectedAddress) {
+                        analyzeVulnerability(selectedAddress);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('检测过程中出错:', error);
+                alert('检测过程中出错，请稍后再试');
+            });
+    }
+
+    // 执行漏洞分析
+    function analyzeVulnerability(address) {
+        console.log("开始分析漏洞:", address);
+
+        fetch(`/analyze/${address}`, {
+            method: 'GET'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error("分析失败:", data.error);
+                    alert("分析失败");
+                } else {
+                    console.log("分析结果:", data.result);
+                    // alert("漏洞分析完成");
+                }
+            })
+            .catch(error => {
+                console.error("分析时出错:", error);
+                alert("分析时出错，请稍后再试");
+            });
+    }
 
 
-
-function displayResults(data) {
-    let tableHTML = `
+    // 展示结果，并修改按钮状态为“重置”
+    function displayResults(data) {
+        let tableHTML = `
     <table class="table">
         <thead>
             <tr>
+                <th>选择</th>
                 <th>漏洞名称</th>
                 <th>函数名称</th>
                 <th>出现位置</th>
@@ -112,30 +141,36 @@ function displayResults(data) {
         <tbody>
     `;
 
-    // 遍历 vulfi_extracted_data 并填充到表格中，去掉 Status 和 Comment 列
-    data.forEach((item, index) => {
-        tableHTML += `
+        // 遍历数据并填充到表格中
+        data.forEach((item, index) => {
+            tableHTML += `
         <tr>
+            <td><input type="radio" name="vulfi-row" value="${item.Address}" onclick="selectRow('${item.Address}')"></td>
             <td>${item.IssueName}</td>
             <td>${item.FunctionName}</td>
             <td>${item.FoundIn}</td>
             <td>${item.Address}</td>
             <td>${item.Priority}</td>
         </tr>`;
-    });
-// {
-//     "Address": "0x140011e7e",
-//     "Comment": "",
-//     "FoundIn": "__report_securityfailureEx",
-//     "FunctionName": "Loop Check",
-//     "IssueName": "Unbound Loop",
-//     "Priority": "High",
-//     "Status": "Not Checked"
-// }
-    tableHTML += "</tbody></table>";
-    document.getElementById('detection-result').innerHTML = tableHTML;
-}
+        });
+        tableHTML += "</tbody></table>";
+        document.getElementById('detection-result').innerHTML = tableHTML;
+    }
 
+
+    let selectedAddress = null;
+
+    // 监听单选框的选择，确保按钮状态正确
+    function selectRow(address) {
+        selectedAddress = address;  // 更新选中的 address
+        console.log("选中的地址是:", selectedAddress);
+
+        // 如果选中某一行，按钮应变为 "开始检测"
+        if (currentStep !== 'detect') {
+            document.getElementById('action-btn').textContent = '开始检测';  // 更新按钮文本
+            currentStep = 'detect';  // 设置状态为 detect，表示可以开始检测
+        }
+    }
 
 
     // 处理文件上传并显示上传的文件

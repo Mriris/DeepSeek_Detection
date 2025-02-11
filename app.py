@@ -22,7 +22,6 @@ def allowed_file(filename):
     return False
 
 
-
 # 加载 DeepSeek 模型并获取漏洞检测结果
 def load_model(features_file):
     with open(features_file, 'r') as f:
@@ -74,6 +73,8 @@ def save_file(file):
     file_path = os.path.join(UPLOAD_FOLDER, new_filename)
     file.save(file_path)
     return file_path
+
+
 # 读取 CSV 文件并将其转换为字典数组
 def read_csv_to_array(csv_file_path):
     data = []
@@ -82,6 +83,41 @@ def read_csv_to_array(csv_file_path):
         for row in reader:
             data.append(row)
     return data
+
+
+def load_features():
+    """
+    从 JSON 文件加载特征数据。
+    包括所有指令和带优先级的指令。
+    """
+    # 特征文件路径
+    features_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\vulfi_extracted_data.json'
+
+    # 打开并加载 JSON 文件
+    with open(features_file_path, 'r') as f:
+        features = json.load(f)
+
+    # 获取第一个函数的所有指令
+    first_function = features[0]  # 假设每个文件包含多个函数
+    all_instructions = [instruction for instruction in first_function['instructions']]
+
+    # 提取带有优先级的指令
+    priority_instructions = [
+        {
+            'address': instruction['address'],
+            'instruction': instruction['instruction'],
+            'issue_name': instruction.get('issue_name', ''),  # 获取 issue_name，若无则为空
+            'priority': instruction['priority']  # 获取优先级
+        }
+        for instruction in first_function['instructions'] if instruction['priority']
+    ]
+    print(f"提取的优先级指令: {priority_instructions}")  # 打印提取的优先级指令
+    # 返回所有指令和带优先级的指令
+    return {
+        'all_instructions': all_instructions,
+        'priority_instructions': priority_instructions
+    }
+
 
 @app.route('/')
 def index():
@@ -151,6 +187,48 @@ def detect():
 
     except Exception as e:
         print(f"处理文件时出错: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/analyze/<address>', methods=['GET'])
+def analyze_vulnerability(address):
+    try:
+        # 加载 feature 数据
+        features = load_features()
+
+        # 查找风险指令
+        highest_priority_instruction = None
+        for instruction in features['priority_instructions']:
+            if instruction['address'] == address:
+                highest_priority_instruction = instruction
+                break
+
+        if not highest_priority_instruction:
+            return jsonify({'error': '未找到匹配的风险指令'}), 404
+
+        # 获取上下文指令
+        instruction_index = next(
+            i for i, instr in enumerate(features['all_instructions']) if instr['address'] == address)
+        previous_instructions, next_instructions = get_context_instructions(instruction_index,
+                                                                            features['all_instructions'],
+                                                                            context_range=10)
+
+        # 生成消息内容
+        previous_instructions = [instr['instruction'] for instr in previous_instructions]
+        next_instructions = [instr['instruction'] for instr in next_instructions]
+        message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
+
+        # 调用模型进行分析
+        response = ollama.chat(model='deepseek-r1:14b', messages=[{'role': 'user', 'content': message_content}])
+
+        if 'message' in response:
+            result_content = response['message']['content']
+            print(result_content)
+            return jsonify({'result': result_content})
+
+        return jsonify({'error': '未获取到分析结果'}), 500
+    except Exception as e:
+        print(f"分析过程中出错: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
