@@ -14,7 +14,7 @@
                 <form action="/detect" method="POST" enctype="multipart/form-data" id="detect-form"
                       class="upload-form d-flex flex-column align-items-center justify-content-center">
                     <div class="form-group w-100 d-flex">
-                        <input type="file" name="json_file" id="json-upload" accept=".json"
+                        <input type="file" name="bin_file" id="bin-upload" accept=".bin, .exe, .elf"
                                class="form-control w-50">
                     </div>
                 </form>
@@ -26,7 +26,6 @@
             </div>
             <!-- 显示检测结果 -->
             <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
-
 
             <!-- 右侧，示意图（可以用任何展示漏洞检测结果的图像或保留默认） -->
             <div class="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
@@ -42,6 +41,7 @@
 
 <script>
     let currentStep = 'select';
+    let resultData = [];  // 用于保存检测结果数据
 
     document.getElementById('action-btn').addEventListener('click', function (event) {
         event.preventDefault();
@@ -56,83 +56,97 @@
         }
     });
 
-    function startDetection() {
-        const formData = new FormData(document.getElementById('detect-form'));
+function startDetection() {
+    const formData = new FormData(document.getElementById('detect-form'));
 
-        // 调试：查看表单数据是否成功提交
-        console.log('上传的表单数据:', formData);
+    fetch('/detect', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("收到的完整数据:", data);  // 调试：查看返回的完整数据
 
-        fetch('/detect', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => {
-                console.log('服务器响应:', response);  // 调试：检查响应
-                return response.json();
-            })
-            .then(data => {
-                console.log('后端返回的数据:', data);  // 调试：输出返回的 JSON 数据
+        if (data.error) {
+            console.error("错误:", data.error);
+            alert(data.error || "发生了未知错误");
+        } else {
+            // 调试：输出返回的 csv 数据
+            console.log("收到的 csv 数据:", data.csv);
 
-                if (data.result) {
-                    let resultContent = data.result;
+            // 确保 data.csv 是数组
+            if (!Array.isArray(data.csv)) {
+                console.error("data.csv 不是数组，数据格式错误");
+                alert("数据格式错误");
+                return;
+            }
 
-                    // 提取 <think> 后的内容
-                    const thinkStart = resultContent.indexOf('<think>');
-                    const thinkEnd = resultContent.indexOf('</think>');
+            // 将 VulFi 数据展示为表格
+            displayResults(data.csv);
 
-                    // 调试：检查原始内容及其格式
-                    console.log('原始返回结果:', resultContent);
-                    if (thinkStart !== -1 && thinkEnd !== -1) {
-                        resultContent = resultContent.slice(thinkEnd + '</think>'.length);  // 获取 <think> 标签后的内容
-                        // console.log('去掉 <think> 标签后的内容:', resultContent);  // 调试：去掉 <think> 后的内容
-                    }
+            // 修改按钮为“重置”
+            document.getElementById('action-btn').textContent = '重置';
+            currentStep = 'reset';  // 更新按钮状态
+        }
+    })
+    .catch(error => {
+        console.error('检测过程中出错:', error);
+        alert('检测过程中出错，请稍后再试');
+    });
+}
 
-                    // 检查 marked 是否是函数
-                    console.log('marked:', marked);
-                    if (typeof marked !== 'function') {
-                        console.error('marked.js 没有正确加载，marked 不是一个函数');
-                    } else {
-                        // 使用 marked.js 将 Markdown 转换为 HTML
-                        const htmlContent = marked(resultContent);
 
-                        // 调试：输出转换后的 HTML 内容
-                        console.log('转换后的 HTML:', htmlContent);
 
-                        // 确保我们正在将 HTML 内容插入到正确的元素
-                        const detectionResultElement = document.getElementById('detection-result');
-                        if (detectionResultElement) {
-                            detectionResultElement.innerHTML = htmlContent;  // 将 HTML 插入页面
-                            console.log('内容已成功插入到页面中');
-                        } else {
-                            console.error('未找到 #detection-result 元素');
-                        }
+function displayResults(data) {
+    let tableHTML = `
+    <table class="table">
+        <thead>
+            <tr>
+                <th>漏洞名称</th>
+                <th>函数名称</th>
+                <th>出现位置</th>
+                <th>地址</th>
+                <th>优先级</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
 
-                        // 修改按钮为“重置”
-                        document.getElementById('action-btn').textContent = '重置';
-                        currentStep = 'reset';  // 更新按钮状态
-                    }
-                } else {
-                    console.error("未返回漏洞检测结果");
-                }
-            })
-            .catch(error => {
-                console.error('检测过程中出错:', error);
-            });
-    }
+    // 遍历 vulfi_extracted_data 并填充到表格中，去掉 Status 和 Comment 列
+    data.forEach((item, index) => {
+        tableHTML += `
+        <tr>
+            <td>${item.IssueName}</td>
+            <td>${item.FunctionName}</td>
+            <td>${item.FoundIn}</td>
+            <td>${item.Address}</td>
+            <td>${item.Priority}</td>
+        </tr>`;
+    });
+// {
+//     "Address": "0x140011e7e",
+//     "Comment": "",
+//     "FoundIn": "__report_securityfailureEx",
+//     "FunctionName": "Loop Check",
+//     "IssueName": "Unbound Loop",
+//     "Priority": "High",
+//     "Status": "Not Checked"
+// }
+    tableHTML += "</tbody></table>";
+    document.getElementById('detection-result').innerHTML = tableHTML;
+}
+
 
 
     // 处理文件上传并显示上传的文件
     function handleFileUpload() {
-        const fileInput = document.getElementById('json-upload');
+        const fileInput = document.getElementById('bin-upload');
         const file = fileInput.files[0];
 
         if (file) {
             // 显示上传的文件名
             const reader = new FileReader();
             reader.onload = function (e) {
-                console.log('文件成功上传并读取。');
-
-                // 更新显示文本区域（如果需要显示文件内容，可以在这里进行）
                 document.getElementById('file-name').textContent = "已选择文件: " + file.name;
             };
             reader.readAsDataURL(file);
@@ -149,6 +163,5 @@
     function resetPage() {
         window.location.reload();  // 通过重载页面实现“重置”
     }
-
 </script>
 {% endblock %}

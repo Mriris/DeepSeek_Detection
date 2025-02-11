@@ -62,7 +62,7 @@ def start_server():
                     json_data = json.dumps(functions, indent=4)
 
                     # 保存为 JSON 文件
-                    file_path = r'C:\0Program\Python\DeepSeek_Detection\example\test3\extracted_functions.json'
+                    file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json'
                     save_as_json(functions, file_path)
 
                     # 发送 JSON 数据到客户端

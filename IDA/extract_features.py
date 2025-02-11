@@ -35,7 +35,7 @@ def extract_instructions(func_start, func_end):
 
 
 def save_as_json(functions):
-    with open(r'C:\0Program\Python\DeepSeek_Detection\example\test4\extracted_functions.json', 'w') as json_file:
+    with open(r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json', 'w') as json_file:
         json.dump(functions, json_file, indent=4)
 
 
@@ -46,5 +46,10 @@ functions = extract_function_info()
 save_as_json(functions)
 
 print("Exported functions to 'extracted_functions.json'")
+
+# 漏洞检测
+plugin_name = "vulfi"
+arg = 0
+idc.load_and_run_plugin(plugin_name, arg)
 
 idc.qexit(0)

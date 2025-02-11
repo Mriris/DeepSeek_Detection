@@ -1495,8 +1495,8 @@ class VulFiEmbeddedChooser(ida_kernwin.Choose):
     #                     out_file.write(csv_string)
     #                 ida_kernwin.info(f"Results exported in comma-separated CSV file to {file_name}")
     def vulfi_export(self):
-        # 设置文件名（你可以修改为任何你想要的文件名）
-        file_name = r"C:\0Program\Python\DeepSeek_Detection\example\test3\scan_results.csv"
+        # 设置文件名
+        file_name = r"C:\0Program\Python\DeepSeek_Detection\example\Web\scan_results.csv"
 
         if file_name:
             # 导出为CSV格式
@@ -1554,7 +1554,7 @@ class vulfi_fetch_t(idaapi.plugin_t):
             icon_id)  # Optional: the action icon (shows when in menus/toolbars)
         idaapi.register_action(vulfi_desc)
         idaapi.attach_action_to_menu("Search", "vulfi:fetch", idaapi.SETMENU_APP)
-        print("******漏洞检测插件启动成功******")
+        print("漏洞检测启动成功")
         # # 创建 VulFi 实例
         # vulfi_instance = VulFi()
         #
@@ -1572,7 +1572,7 @@ class vulfi_fetch_t(idaapi.plugin_t):
 
         # 自动执行 VulFi 的功能，直接调用 activate 方法
         vulfi_instance.activate(None)  # 如果需要传递 ctx 参数，可以适当修改
-        print("******漏洞检测插件运行成功******")
+        print("漏洞检测模型分析完成")
 
 
     def term(self):

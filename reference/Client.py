@@ -25,7 +25,7 @@ def start_client():
                 print(functions)
 
                 # 读取保存的 JSON 文件
-                with open(r'C:\0Program\Python\DeepSeek_Detection\example\test3\extracted_functions.json', 'r') as json_file:
+                with open(r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json', 'r') as json_file:
                     saved_functions = json.load(json_file)
                     print("Functions saved to file:")
                     print(saved_functions)
