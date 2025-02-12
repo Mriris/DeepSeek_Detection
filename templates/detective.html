@@ -21,22 +21,20 @@
 
                 <!-- 按钮 -->
                 <div class="d-flex mt-3">
-                    <a href="javascript:void(0);" class="btn-get-started me-3" id="action-btn">确定选择文件</a>
+                    <a href="javascript:void(0);" class="btn-get-started me-3" id="action-btn">上传</a>
                 </div>
             </div>
-            <!-- 显示检测结果 -->
-            <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
-            <!-- 新增：显示漏洞分析结果 -->
-            <div id="analysis-result" style="margin-top: 20px; color: #fff;"></div>
-            <!-- 右侧，示意图（可以用任何展示漏洞检测结果的图像或保留默认） -->
-            <div class="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
-                <img id="image-display" src="../static/assets/img/hero-img.png" class="img-fluid animated"
-                     alt="示意图">
-                <!-- 增强后的图像，默认隐藏，改为显示检测结果 -->
-                <img id="enhanced-image-display" src="" style="margin-left: 20px;" class="img-fluid animated d-none"
-                     alt="检测结果">
-            </div>
+
         </div>
+        <!-- 加载动画 -->
+        <div id="loading-animation" style="display: none;">
+            <div class="spinner"></div>
+            <p>正在检测，请稍候...</p>
+        </div>
+        <!-- 显示检测结果 -->
+        <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
+        <!-- 新增：显示漏洞分析结果 -->
+        <div id="analysis-result" style="margin-top: 20px; color: #fff;"></div>
     </div>
 </section><!-- /Hero Section -->
 
@@ -50,16 +48,29 @@
         if (currentStep === 'select') {
             handleFileUpload();
         } else if (currentStep === 'detect') {
-            startDetection();
+            // 仅在数据获取后显示表格
+            if (resultData.length > 0) {
+                displayResults(resultData);  // 显示表格
+            } else {
+                alert("请等待数据加载完成后再查看结果");
+            }
+            // 如果选中了地址，调用漏洞分析
+            if (selectedAddress) {
+                analyzeVulnerability(selectedAddress);
+            }
         } else if (currentStep === 'reset') {
-            // 第三次点击“重置”
             resetPage();
         }
     });
 
+
     // 启动检测
     function startDetection() {
         const formData = new FormData(document.getElementById('detect-form'));
+
+        // 显示加载动画
+        document.getElementById('loading-animation').style.display = 'block';
+        document.getElementById('action-btn').disabled = true;  // 禁用按钮，防止重复点击
 
         fetch('/detect', {
             method: 'POST',
@@ -68,6 +79,10 @@
             .then(response => response.json())
             .then(data => {
                 console.log("收到的完整数据:", data);
+
+                // 隐藏加载动画并启用按钮
+                document.getElementById('loading-animation').style.display = 'none';
+                document.getElementById('action-btn').disabled = false;  // 启用按钮
 
                 if (data.error) {
                     console.error("错误:", data.error);
@@ -81,25 +96,19 @@
                         alert("数据格式错误");
                         return;
                     }
-
-                    // 展示表格
-                    displayResults(csvData);
-
-                    // 按钮改为重置
-                    document.getElementById('action-btn').textContent = '重置';
-                    currentStep = 'reset';
-
-                    // 如果选中了某个地址，调用后端进行漏洞分析
-                    if (selectedAddress) {
-                        analyzeVulnerability(selectedAddress);
-                    }
+                    // 将结果保存在 data 中，表格不显示，直到点击开始检测
+                    resultData = csvData;
                 }
             })
             .catch(error => {
+                // 隐藏加载动画并启用按钮
+                document.getElementById('loading-animation').style.display = 'none';
+                document.getElementById('action-btn').disabled = false;  // 启用按钮
                 console.error('检测过程中出错:', error);
                 alert('检测过程中出错，请稍后再试');
             });
     }
+
 
     function analyzeVulnerability(address) {
         console.log("开始分析漏洞:", address);
@@ -148,9 +157,9 @@
     }
 
 
-function displayResults(data) {
-    // 生成表格 HTML，其中在 <tfoot> 中添加了输入框
-    let tableHTML = `
+    function displayResults(data) {
+        // 生成表格 HTML，其中在 <tfoot> 中添加了输入框
+        let tableHTML = `
     <table id="results-table" class="table display">
         <thead>
             <tr>
@@ -164,8 +173,8 @@ function displayResults(data) {
         </thead>
         <tbody>
     `;
-    data.forEach((item, index) => {
-        tableHTML += `
+        data.forEach((item, index) => {
+            tableHTML += `
             <tr>
                 <td>
                   <input type="radio" name="vulfi-row" value="${item.Address}"
@@ -178,8 +187,8 @@ function displayResults(data) {
                 <td>${item.Priority}</td>
             </tr>
         `;
-    });
-    tableHTML += `
+        });
+        tableHTML += `
         </tbody>
         <tfoot>
             <tr>
@@ -193,37 +202,36 @@ function displayResults(data) {
         </tfoot>
     </table>
     `;
-    document.getElementById('detection-result').innerHTML = tableHTML;
+        document.getElementById('detection-result').innerHTML = tableHTML;
 
-    // 如果之前已经初始化过 DataTable，则先销毁
-    if ($.fn.DataTable.isDataTable('#results-table')) {
-        $('#results-table').DataTable().destroy();
-    }
-
-    // 初始化 DataTable
-    let table = $('#results-table').DataTable({
-        paging: true,       // 启用分页
-        ordering: true,     // 启用排序
-        info: true,         // 显示页脚信息
-        columnDefs: [
-            { orderable: false, targets: 0 }  // 禁止第一列排序
-        ]
-    });
-
-    // 针对每一列的筛选
-    $('#results-table tfoot th').each(function (i) {
-        // 如果当前列的 tfoot 单元格中存在 input 元素
-        let input = $(this).find('input');
-        if (input.length > 0) {
-            input.on('keyup change clear', function () {
-                if (table.column(i).search() !== this.value) {
-                    table.column(i).search(this.value).draw();
-                }
-            });
+        // 如果之前已经初始化过 DataTable，则先销毁
+        if ($.fn.DataTable.isDataTable('#results-table')) {
+            $('#results-table').DataTable().destroy();
         }
-    });
-}
 
+        // 初始化 DataTable
+        let table = $('#results-table').DataTable({
+            paging: true,       // 启用分页
+            ordering: true,     // 启用排序
+            info: true,         // 显示页脚信息
+            columnDefs: [
+                {orderable: false, targets: 0}  // 禁止第一列排序
+            ]
+        });
+
+        // 针对每一列的筛选
+        $('#results-table tfoot th').each(function (i) {
+            // 如果当前列的 tfoot 单元格中存在 input 元素
+            let input = $(this).find('input');
+            if (input.length > 0) {
+                input.on('keyup change clear', function () {
+                    if (table.column(i).search() !== this.value) {
+                        table.column(i).search(this.value).draw();
+                    }
+                });
+            }
+        });
+    }
 
 
     let selectedAddress = null;
@@ -235,7 +243,7 @@ function displayResults(data) {
 
         // 如果选中某一行，按钮应变为 "开始检测"
         if (currentStep !== 'detect') {
-            document.getElementById('action-btn').textContent = '开始检测';  // 更新按钮文本
+            document.getElementById('action-btn').textContent = '函数检测';  // 更新按钮文本
             currentStep = 'detect';  // 设置状态为 detect，表示可以开始检测
         }
     }
@@ -254,13 +262,16 @@ function displayResults(data) {
             };
             reader.readAsDataURL(file);
 
-            // 修改按钮为“开始检测”
+            // 修改按钮为“开始检测”，并直接开始检测
             document.getElementById('action-btn').textContent = '开始检测';
             currentStep = 'detect';  // 更新按钮状态
+
+            startDetection();  // 立即开始检测
         } else {
             alert("请选择一个文件进行上传！");
         }
     }
+
 
     // 刷新页面
     function resetPage() {
