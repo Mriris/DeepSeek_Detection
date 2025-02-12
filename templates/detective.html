@@ -18,11 +18,18 @@
                                class="form-control w-50">
                     </div>
                 </form>
-
                 <!-- 按钮 -->
                 <div class="d-flex mt-3">
                     <a href="javascript:void(0);" class="btn-get-started me-3" id="action-btn">上传</a>
                 </div>
+            </div>
+            <!-- 右侧，示意图（可以用任何展示漏洞检测结果的图像或保留默认） -->
+            <div class="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
+                <img id="image-display" src="../static/assets/img/hero-img.png" class="img-fluid animated"
+                     alt="示意图">
+                <!-- 增强后的图像，默认隐藏，改为显示检测结果 -->
+                <img id="enhanced-image-display" src="" style="margin-left: 20px;" class="img-fluid animated d-none"
+                     alt="检测结果">
             </div>
 
         </div>
@@ -33,7 +40,7 @@
         </div>
         <!-- 显示检测结果 -->
         <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
-        <!-- 新增：显示漏洞分析结果 -->
+        <!-- 显示漏洞分析结果 -->
         <div id="analysis-result" style="margin-top: 20px; color: #fff;"></div>
     </div>
 </section><!-- /Hero Section -->
@@ -48,14 +55,9 @@
         if (currentStep === 'select') {
             handleFileUpload();
         } else if (currentStep === 'detect') {
-            // 仅在数据获取后显示表格
-            if (resultData.length > 0) {
-                displayResults(resultData);  // 显示表格
-            } else {
-                alert("请等待数据加载完成后再查看结果");
-            }
             // 如果选中了地址，调用漏洞分析
             if (selectedAddress) {
+                document.getElementById('loading-animation').style.display = 'block';
                 analyzeVulnerability(selectedAddress);
             }
         } else if (currentStep === 'reset') {
@@ -96,8 +98,10 @@
                         alert("数据格式错误");
                         return;
                     }
-                    // 将结果保存在 data 中，表格不显示，直到点击开始检测
+                    // 将结果保存在 data 中并显示表格
                     resultData = csvData;
+                    displayResults(resultData);
+                    document.getElementById('action-btn').textContent = '请选择漏洞';
                 }
             })
             .catch(error => {
@@ -118,6 +122,7 @@
         })
             .then(response => response.json())
             .then(data => {
+                document.getElementById('loading-animation').style.display = 'none';
                 if (data.error) {
                     console.error("分析失败:", data.error);
                     alert("分析失败");
@@ -240,10 +245,9 @@
     function selectRow(address) {
         selectedAddress = address;  // 更新选中的 address
         console.log("选中的地址是:", selectedAddress);
-
-        // 如果选中某一行，按钮应变为 "开始检测"
+        document.getElementById('action-btn').textContent = '漏洞分析';  // 更新按钮文本
+        // 如果选中某一行，按钮改名
         if (currentStep !== 'detect') {
-            document.getElementById('action-btn').textContent = '函数检测';  // 更新按钮文本
             currentStep = 'detect';  // 设置状态为 detect，表示可以开始检测
         }
     }
@@ -263,7 +267,7 @@
             reader.readAsDataURL(file);
 
             // 修改按钮为“开始检测”，并直接开始检测
-            document.getElementById('action-btn').textContent = '开始检测';
+            document.getElementById('action-btn').textContent = '漏洞检测中';
             currentStep = 'detect';  // 更新按钮状态
 
             startDetection();  // 立即开始检测
