@@ -3,7 +3,7 @@ import csv
 import re
 
 
-# 读取VulFi结果文件 (test3.386)
+# 读取VulFi结果文件
 def read_vulfi_file(vulfi_file_path):
     vulfi_data = []
     with open(vulfi_file_path, 'r') as file:

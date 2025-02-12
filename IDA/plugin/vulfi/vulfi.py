@@ -135,8 +135,10 @@ class VulFiScanner:
         if not ida_hexrays.init_hexrays_plugin():
             self.hexrays = False
             self.strings_list = idautils.Strings()
+            print("[DEBUG] Hexrays插件不可用")
         else:
             self.hexrays = True
+            print("[DEBUG] Hexrays插件启用成功")
             # self.strings_list = idautils.Strings()
 
     def start_scan(self, ignore_addr_list):
@@ -145,6 +147,7 @@ class VulFiScanner:
         self.prepare_functions_list()
         for rule in self.rules:
             try:
+                # print(f"扫描规则：{rule['name']}")
                 if rule["function_names"] == ["Array Access"]:
                     xrefs_dict = self.get_array_accesses()
                 elif rule["function_names"] == ["Loop Check"]:
@@ -155,6 +158,7 @@ class VulFiScanner:
                 ida_kernwin.warning("This does not seem like a correct rule file. Aborting scan.")
                 return None
             for scanned_function in xrefs_dict:
+                # print(f"扫描函数：{scanned_function}")
                 # For each function in the rules
                 skip_count = 0
                 counter = 0  # For UI only

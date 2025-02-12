@@ -143,15 +143,27 @@ def detect():
         if file and allowed_file(file.filename):
             # 保存文件并获取新路径
             file_path = save_file(file)
+            # 删除旧的i64配置文件
+            i64_file_path = f"{file_path}.i64"
+            if os.path.exists(i64_file_path):
+                os.remove(i64_file_path)
+                print(f"已删除文件: {i64_file_path}")
+            # 执行第一个 IDA 命令提取特征
+            ida_command_1 = f'"C:\\Application\\IDA Professional 9.0\\ida.exe" -A -S"C:\\0Program\\Python\\DeepSeek_Detection\\IDA\\extract_features.py" "{file_path}"'
+            result_1 = subprocess.run(ida_command_1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            # 执行 IDA 命令提取特征
-            ida_command = f'"C:\\Application\\IDA Professional 9.0\\ida.exe" -A -S"C:\\0Program\\Python\\DeepSeek_Detection\\IDA\\extract_features.py" "{file_path}"'
-            result = subprocess.run(ida_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-            if result.stderr:
-                print("IDA 执行错误:", result.stderr.decode())
+            if result_1.stderr:
+                print("IDA 执行错误:", result_1.stderr.decode())
                 return jsonify({'error': 'IDA 执行失败'}), 500
 
+            # 执行第二个 IDA 命令运行 VulFi 脚本
+            ida_command_2 = f'"C:\\Application\\IDA Professional 9.0\\ida.exe" -A -S"C:\\0Program\\Python\\DeepSeek_Detection\\IDA\\VulFi.py" "{file_path}"'
+            print("执行第2个指令：",ida_command_2)
+            result_2 = subprocess.run(ida_command_2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            if result_2.stderr:
+                print("IDA 执行错误:", result_2.stderr.decode())
+                return jsonify({'error': 'IDA 执行失败'}), 500
             # 获取并处理 VulFi 数据
             vulfi_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\scan_results.csv'
             extracted_functions_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json'
