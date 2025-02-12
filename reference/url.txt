@@ -1,0 +1,10 @@
+IDA数据库的创建与保存    https://www.idapro.net.cn/shouqian/ida-auuc.html
+IDA命令行中文手册    https://github.com/Vu1nT0tal/IDA-Pro-tips/blob/main/docs/7-ida-command-line-options-cheatsheet.md
+IDA命令行官方手册  https://docs.hex-rays.com/user-guide/configuration/command-line-switches
+漏洞样例    https://bbs.kanxue.com/thread-221734.htm
+样例2 https://bbs.kanxue.com/thread-131340.htm
+支持插件    https://github.com/Accenture/VulFi
+ollama手册    https://github.com/ollama/ollama-python/blob/main/README.md
+DeepSeek离线下载    https://ollama.com/library/deepseek-r1
+idc加载插件API  https://docs.hex-rays.com/developer-guide/idc/idc-api-reference/alphabetical-list-of-idc-functions/653
+HxD十六进制编辑器 https://mh-nexus.de/en/
