@@ -148,10 +148,10 @@
     }
 
 
-    // 展示结果，并修改按钮状态为“重置”
-    function displayResults(data) {
-        let tableHTML = `
-    <table class="table">
+function displayResults(data) {
+    // 生成表格 HTML，其中在 <tfoot> 中添加了输入框
+    let tableHTML = `
+    <table id="results-table" class="table display">
         <thead>
             <tr>
                 <th>选择</th>
@@ -164,22 +164,66 @@
         </thead>
         <tbody>
     `;
+    data.forEach((item, index) => {
+        tableHTML += `
+            <tr>
+                <td>
+                  <input type="radio" name="vulfi-row" value="${item.Address}"
+                         onclick="selectRow('${item.Address}')">
+                </td>
+                <td>${item.IssueName}</td>
+                <td>${item.FunctionName}</td>
+                <td>${item.FoundIn}</td>
+                <td>${item.Address}</td>
+                <td>${item.Priority}</td>
+            </tr>
+        `;
+    });
+    tableHTML += `
+        </tbody>
+        <tfoot>
+            <tr>
+                <th></th>
+                <th><input type="text" placeholder="筛选漏洞名称" /></th>
+                <th><input type="text" placeholder="筛选函数名称" /></th>
+                <th></th>
+                <th></th>
+                <th><input type="text" placeholder="筛选优先级" /></th>
+            </tr>
+        </tfoot>
+    </table>
+    `;
+    document.getElementById('detection-result').innerHTML = tableHTML;
 
-        // 遍历数据并填充到表格中
-        data.forEach((item, index) => {
-            tableHTML += `
-        <tr>
-            <td><input type="radio" name="vulfi-row" value="${item.Address}" onclick="selectRow('${item.Address}')"></td>
-            <td>${item.IssueName}</td>
-            <td>${item.FunctionName}</td>
-            <td>${item.FoundIn}</td>
-            <td>${item.Address}</td>
-            <td>${item.Priority}</td>
-        </tr>`;
-        });
-        tableHTML += "</tbody></table>";
-        document.getElementById('detection-result').innerHTML = tableHTML;
+    // 如果之前已经初始化过 DataTable，则先销毁
+    if ($.fn.DataTable.isDataTable('#results-table')) {
+        $('#results-table').DataTable().destroy();
     }
+
+    // 初始化 DataTable
+    let table = $('#results-table').DataTable({
+        paging: true,       // 启用分页
+        ordering: true,     // 启用排序
+        info: true,         // 显示页脚信息
+        columnDefs: [
+            { orderable: false, targets: 0 }  // 禁止第一列排序
+        ]
+    });
+
+    // 针对每一列的筛选
+    $('#results-table tfoot th').each(function (i) {
+        // 如果当前列的 tfoot 单元格中存在 input 元素
+        let input = $(this).find('input');
+        if (input.length > 0) {
+            input.on('keyup change clear', function () {
+                if (table.column(i).search() !== this.value) {
+                    table.column(i).search(this.value).draw();
+                }
+            });
+        }
+    });
+}
+
 
 
     let selectedAddress = null;
