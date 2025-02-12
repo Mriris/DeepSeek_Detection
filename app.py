@@ -68,6 +68,19 @@ def get_context_instructions(instruction_index, all_instructions, context_range=
 
 # 文件保存时重命名为 'Application' 并保留扩展名
 def save_file(file):
+    folder_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web'
+    try:
+        # 遍历文件夹中的文件并删除
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"已删除文件: {file_path}")
+            elif os.path.isdir(file_path):
+                os.rmdir(file_path)
+                print(f"已删除文件夹: {file_path}")
+    except Exception as e:
+        print(f"清空文件夹时出错: {str(e)}")
     file_ext = file.filename.rsplit('.', 1)[1].lower()
     new_filename = 'Application.' + file_ext  # 重命名为 Application + 扩展名
     file_path = os.path.join(UPLOAD_FOLDER, new_filename)
@@ -143,11 +156,12 @@ def detect():
         if file and allowed_file(file.filename):
             # 保存文件并获取新路径
             file_path = save_file(file)
-            # 删除旧的i64配置文件
-            i64_file_path = f"{file_path}.i64"
-            if os.path.exists(i64_file_path):
-                os.remove(i64_file_path)
-                print(f"已删除文件: {i64_file_path}")
+            # # 删除旧的i64配置文件
+            # i64_file_path = f"{file_path}.i64"
+            # if os.path.exists(i64_file_path):
+            #     os.remove(i64_file_path)
+            #     print(f"已删除文件: {i64_file_path}")
+
             # 执行第一个 IDA 命令提取特征
             ida_command_1 = f'"C:\\Application\\IDA Professional 9.0\\ida.exe" -A -S"C:\\0Program\\Python\\DeepSeek_Detection\\IDA\\extract_features.py" "{file_path}"'
             result_1 = subprocess.run(ida_command_1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
