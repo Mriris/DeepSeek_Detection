@@ -4,7 +4,7 @@ import idc
 import idaapi
 
 # 等待自动分析完成
-idaapi.auto_wait()
+# idaapi.auto_wait()
 
 # 执行插件加载和运行
 plugin_name = "vulfi"

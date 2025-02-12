@@ -38,6 +38,7 @@ def save_as_json(functions):
     with open(r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json', 'w') as json_file:
         json.dump(functions, json_file, indent=4)
 
+idaapi.auto_wait()
 
 # 提取函数信息
 functions = extract_function_info()

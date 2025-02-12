@@ -101,6 +101,7 @@ def extract_vulfi_data(vulfi_data, extracted_functions):
     # 按优先级排序
     vulfi_extracted_data.sort(key=lambda x: priority_to_numeric(x['highest_priority']), reverse=True)
 
+    # print(f"提取的 VulFi 数据: {vulfi_extracted_data[:5]}")  # 输出前5个函数数据
     return vulfi_extracted_data
 
 
