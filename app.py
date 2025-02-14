@@ -1,6 +1,8 @@
 import csv
 import os
 import subprocess
+import sys
+
 from flask import Flask, render_template, request, jsonify
 import ollama
 import json
@@ -9,15 +11,54 @@ from process_vulfi import read_vulfi_file, read_extracted_functions, extract_vul
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = r'C:\0Program\Python\DeepSeek_Detection\example\Web'
+# 定义关键路径变量
+PROJECT_PATH = r'C:\0Program\Python\DeepSeek_Detection'
+IDA_PATH = r'C:\Application\IDA Professional 9.0'
+
+# 其他路径变量
+UPLOAD_FOLDER = os.path.join(PROJECT_PATH, 'example', 'Web')
+FEATURES_FILE_PATH = os.path.join(UPLOAD_FOLDER, 'vulfi_extracted_data.json')
+VULFI_FILE_PATH = os.path.join(UPLOAD_FOLDER, 'scan_results.csv')
+EXTRACTED_FUNCTIONS_FILE_PATH = os.path.join(UPLOAD_FOLDER, 'extracted_functions.json')
+OUTPUT_FILE_PATH = os.path.join(UPLOAD_FOLDER, 'vulfi_extracted_data.json')
+EXTRACT_FEATURES_SCRIPT_PATH = os.path.join(PROJECT_PATH, 'IDA', 'extract_features.py')
+VULFI_SCRIPT_PATH = os.path.join(PROJECT_PATH, 'IDA', 'VulFi.py')
+IDA_EXECUTABLE = os.path.join(IDA_PATH, 'ida.exe')
+PLUGINS_FOLDER = os.path.join(IDA_PATH, 'plugins')
+
 ALLOWED_EXTENSIONS = {'bin', 'exe', 'elf'}
 
+
+# 检查项目路径是否存在，不存在则终止程序
+if not os.path.exists(PROJECT_PATH):
+    print(f"错误：项目路径 {PROJECT_PATH} 不存在！")
+    sys.exit(1)
+
+# 检查 IDA 路径是否有效，不存在则终止程序
+if not os.path.exists(IDA_PATH):
+    print(f"错误：IDA 可执行文件 {IDA_PATH} 不存在！")
+    sys.exit(1)
+
+# 定义 plugins 文件夹路径
+
+
+# 检查 plugins 文件夹是否齐全
+required_files = ['vulfi.py', 'vulfi_prototypes.json', 'vulfi_rules.json']
+missing_files = [file for file in required_files if not os.path.exists(os.path.join(PLUGINS_FOLDER, file))]
+
+if missing_files:
+    print(f"错误：以下文件缺失：{', '.join(missing_files)}\n请从 {PROJECT_PATH}\\IDA\\plugins 中找到并复制这些文件到 {PLUGINS_FOLDER} 文件夹中。")
+    sys.exit(1)
+
+# 确保上传文件夹存在，如果不存在则创建
+if not os.path.exists(UPLOAD_FOLDER):
+    print(f"上传文件夹 {UPLOAD_FOLDER} 不存在，正在创建...")
+    os.makedirs(UPLOAD_FOLDER)
 
 # 确保上传的文件符合格式
 def allowed_file(filename):
     if '.' in filename:
         extension = filename.rsplit('.', 1)[1].lower()
-        # print(f"上传文件的扩展名是: {extension}")  # 调试：输出扩展名
         return extension in ALLOWED_EXTENSIONS
     return False
 
@@ -68,11 +109,10 @@ def get_context_instructions(instruction_index, all_instructions, context_range=
 
 # 文件保存时重命名为 'Application' 并保留扩展名
 def save_file(file):
-    folder_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web'
     try:
         # 遍历文件夹中的文件并删除
-        for filename in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, filename)
+        for filename in os.listdir(UPLOAD_FOLDER):
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
             if os.path.isfile(file_path):
                 os.remove(file_path)
                 print(f"已删除文件: {file_path}")
@@ -81,6 +121,7 @@ def save_file(file):
                 print(f"已删除文件夹: {file_path}")
     except Exception as e:
         print(f"清空文件夹时出错: {str(e)}")
+
     file_ext = file.filename.rsplit('.', 1)[1].lower()
     new_filename = 'Application.' + file_ext  # 重命名为 Application + 扩展名
     file_path = os.path.join(UPLOAD_FOLDER, new_filename)
@@ -102,8 +143,7 @@ def load_features():
     """
     从 JSON 文件加载特征数据，遍历所有函数，提取所有指令以及带优先级的指令
     """
-    features_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\vulfi_extracted_data.json'
-    with open(features_file_path, 'r') as f:
+    with open(FEATURES_FILE_PATH, 'r') as f:
         features = json.load(f)
 
     all_instructions = []
@@ -156,36 +196,25 @@ def detect():
         if file and allowed_file(file.filename):
             # 保存文件并获取新路径
             file_path = save_file(file)
-            # # 删除旧的i64配置文件
-            # i64_file_path = f"{file_path}.i64"
-            # if os.path.exists(i64_file_path):
-            #     os.remove(i64_file_path)
-            #     print(f"已删除文件: {i64_file_path}")
 
             # 执行第一个 IDA 命令提取特征
-            ida_command_1 = f'"C:\\Application\\IDA Professional 9.0\\ida.exe" -A -S"C:\\0Program\\Python\\DeepSeek_Detection\\IDA\\extract_features.py" "{file_path}"'
+            ida_command_1 = f'"{IDA_EXECUTABLE}" -A -S"{EXTRACT_FEATURES_SCRIPT_PATH}" "{file_path}"'
             result_1 = subprocess.run(ida_command_1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             if result_1.stderr:
-                print("IDA 执行错误:", result_1.stderr.decode())
                 return jsonify({'error': 'IDA 执行失败'}), 500
 
             # 执行第二个 IDA 命令运行 VulFi 脚本
-            ida_command_2 = f'"C:\\Application\\IDA Professional 9.0\\ida.exe" -A -S"C:\\0Program\\Python\\DeepSeek_Detection\\IDA\\VulFi.py" "{file_path}"'
-            print("执行第2个指令：",ida_command_2)
+            ida_command_2 = f'"{IDA_EXECUTABLE}" -A -S"{VULFI_SCRIPT_PATH}" "{file_path}"'
             result_2 = subprocess.run(ida_command_2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             if result_2.stderr:
                 print("IDA 执行错误:", result_2.stderr.decode())
                 return jsonify({'error': 'IDA 执行失败'}), 500
+
             # 获取并处理 VulFi 数据
-            vulfi_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\scan_results.csv'
-            extracted_functions_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json'
-
-            # 读取 VulFi 结果和提取的函数数据
-
-            vulfi_data = read_vulfi_file(vulfi_file_path)
-            extracted_functions = read_extracted_functions(extracted_functions_file_path)
+            vulfi_data = read_vulfi_file(VULFI_FILE_PATH)
+            extracted_functions = read_extracted_functions(EXTRACTED_FUNCTIONS_FILE_PATH)
 
             # 调试：输出读取的 VulFi 数据和函数数据
             # print("VulFi 数据读取成功:", vulfi_data[:2])  # 输出前两行数据
@@ -194,15 +223,12 @@ def detect():
             # 生成最终的数据
             extracted_data = extract_vulfi_data(vulfi_data, extracted_functions)
 
-            # 调试：输出提取的数据
-            # print("提取的数据:", extracted_data[:2])  # 输出前两条提取的数据
-
             # 保存处理后的数据到 JSON 文件
-            output_file_path = r'C:\0Program\Python\DeepSeek_Detection\example\Web\vulfi_extracted_data.json'
-            save_to_json(extracted_data, output_file_path)
+            save_to_json(extracted_data, OUTPUT_FILE_PATH)
+
             # 读取并解析 scan_results.csv 文件
-            if os.path.exists(vulfi_file_path):
-                csv_content = read_csv_to_array(vulfi_file_path)
+            if os.path.exists(VULFI_FILE_PATH):
+                csv_content = read_csv_to_array(VULFI_FILE_PATH)
 
             return jsonify({'result': extracted_data, 'csv': csv_content})
 
