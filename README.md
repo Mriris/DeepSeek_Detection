@@ -89,4 +89,4 @@ VULNEX 是一个基于深度学习的漏洞检测系统，结合了机器学习�
 
 ## 技术实现文档
 
-有关 VULNEX 项目的技术实现详情，请参阅 [技术文档](IDA/readme.md)。
+有关 VULNEX 项目的技术实现详情，请参阅 [技术文档](IDA/TECHNICAL_DOCUMENTATION)。
