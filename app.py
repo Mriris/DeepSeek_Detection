@@ -28,7 +28,6 @@ PLUGINS_FOLDER = os.path.join(IDA_PATH, 'plugins')
 
 ALLOWED_EXTENSIONS = {'bin', 'exe', 'elf'}
 
-
 # 检查项目路径是否存在，不存在则终止程序
 if not os.path.exists(PROJECT_PATH):
     print(f"错误：项目路径 {PROJECT_PATH} 不存在！")
@@ -47,13 +46,15 @@ required_files = ['vulfi.py', 'vulfi_prototypes.json', 'vulfi_rules.json']
 missing_files = [file for file in required_files if not os.path.exists(os.path.join(PLUGINS_FOLDER, file))]
 
 if missing_files:
-    print(f"错误：以下文件缺失：{', '.join(missing_files)}\n请从 {PROJECT_PATH}\\IDA\\plugins 中找到并复制这些文件到 {PLUGINS_FOLDER} 文件夹中。")
+    print(
+        f"错误：以下文件缺失：{', '.join(missing_files)}\n请从 {PROJECT_PATH}\\IDA\\plugins 中找到并复制这些文件到 {PLUGINS_FOLDER} 文件夹中。")
     sys.exit(1)
 
 # 确保上传文件夹存在，如果不存在则创建
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"上传文件夹 {UPLOAD_FOLDER} 不存在，正在创建...")
     os.makedirs(UPLOAD_FOLDER)
+
 
 # 确保上传的文件符合格式
 def allowed_file(filename):
@@ -266,6 +267,9 @@ def analyze_vulnerability(address):
         previous_instructions = [instr['instruction'] for instr in previous_instructions]
         next_instructions = [instr['instruction'] for instr in next_instructions]
         message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
+        # message_content = f"你好"
+
+        print(f"生成的消息内容: {message_content}")  # 输出生成的消息内容
 
         # 调用模型进行分析
         response = ollama.chat(model='deepseek-r1:14b', messages=[{'role': 'user', 'content': message_content}])
@@ -282,4 +286,4 @@ def analyze_vulnerability(address):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
