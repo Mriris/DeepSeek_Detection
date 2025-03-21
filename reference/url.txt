@@ -10,3 +10,4 @@ idc加载插件API  https://docs.hex-rays.com/developer-guide/idc/idc-api-refere
 HxD十六进制编辑器 https://mh-nexus.de/en/
 RAGFlow知识库(运营商不允许80端口) https://github.com/infiniflow/ragflow/blob/main/README_zh.md
 RAGFlow优质教程(ollama端口环境变量只要":11434") https://www.bilibili.com/video/BV1WiP2ezE5a/?spm_id_from=333.788.recommend_more_video.-1&vd_source=082e3a82ec0dc840939e268680894381
+Oauth微软 https://portal.azure.com/

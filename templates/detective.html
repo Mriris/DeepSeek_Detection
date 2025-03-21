@@ -161,6 +161,82 @@
             });
     }
 
+    //         function analyzeVulnerability(address) {
+    //     console.log("开始分析漏洞:", address);
+    //
+    //     fetch(`/analyze/${address}`, {
+    //         method: 'GET'
+    //     })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         document.getElementById('loading-animation').style.display = 'none';
+    //         if (data.error) {
+    //             console.error("分析失败:", data.error);
+    //             alert("分析失败");
+    //         } else {
+    //             console.log("分析结果:", data.result);
+    //
+    //             // 提取 <think> 和外部 Markdown 内容
+    //             let resultContent = data.result;
+    //             let thinkStartIndex = resultContent.indexOf('<think>');
+    //             let thinkEndIndex = resultContent.indexOf('</think>');
+    //
+    //             // 提取 think 内容
+    //             let thinkContent = '';
+    //             let markdownContent = '';
+    //
+    //             if (thinkStartIndex !== -1 && thinkEndIndex !== -1) {
+    //                 thinkContent = resultContent.slice(thinkStartIndex + 7, thinkEndIndex); // 去除 <think> 和 </think>
+    //                 markdownContent = resultContent.slice(thinkEndIndex + 8).trim(); // 获取 think 后面的内容
+    //             } else {
+    //                 markdownContent = resultContent; // 如果没有 <think> 标签，直接显示结果
+    //             }
+    //
+    //             // 开始逐行显示思考部分
+    //             let thinkContentLines = thinkContent.split('\n');
+    //             let markdownContentLines = markdownContent.split('\n');
+    //
+    //             let lineIndex = 0;
+    //             let allContentLines = thinkContentLines.concat(markdownContentLines);
+    //
+    //             // 定义逐行输出的函数
+    //             function displayLineByLine() {
+    //                 if (lineIndex < allContentLines.length) {
+    //                     let currentLine = allContentLines[lineIndex];
+    //                     let isThinkLine = lineIndex < thinkContentLines.length;
+    //
+    //                     // 逐行更新思考部分和分析部分
+    //                     if (isThinkLine) {
+    //                         document.querySelector('.think-content').innerHTML += currentLine + "<br>";
+    //                     } else {
+    //                         document.querySelector('#markdown-content').innerHTML += currentLine + "<br>";
+    //                     }
+    //
+    //                     lineIndex++;
+    //                 } else {
+    //                     clearInterval(intervalID); // 完成逐行显示后停止定时器
+    //                 }
+    //             }
+    //
+    //             // 初始化分析结果显示区域
+    //             document.getElementById('analysis-result').innerHTML = `
+    //                 <h3>漏洞分析结果</h3>
+    //                 <h4>思考部分</h4>
+    //                 <div class="think-content"></div>
+    //                 <h4>详细分析</h4>
+    //                 <div id="markdown-content"></div>
+    //             `;
+    //
+    //             // 设置定时器逐行显示内容，每500ms显示一行
+    //             let intervalID = setInterval(displayLineByLine, 500);
+    //         }
+    //     })
+    //     .catch(error => {
+    //         console.error("分析时出错:", error);
+    //         alert("分析时出错，请稍后再试");
+    //     });
+    // }
+
 
     function displayResults(data) {
         // 生成表格 HTML，其中在 <tfoot> 中添加了输入框

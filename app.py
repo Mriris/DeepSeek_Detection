@@ -3,13 +3,22 @@ import os
 import subprocess
 import sys
 
-from flask import Flask, render_template, request, jsonify
+from authlib.integrations.flask_client import OAuth
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Response
 import ollama
 import json
+import requests
 
 from process_vulfi import read_vulfi_file, read_extracted_functions, extract_vulfi_data, save_to_json
 
 app = Flask(__name__)
+
+# 定义OAuth配置
+CLIENT_ID = '43e8f346-e303-41fe-8a0e-6f11188a69b5'
+CLIENT_SECRET = 'Zsx8Q~gLnWrKB4TgzmGbqBLDsMJYBMC3INRy5bXD'
+
+# 定义RAGFlow
+app.config['CHAT_AUTH_TOKEN'] = 'AzNjBkNzljZWVkOTExZWY5MjM2MDI0Mm'
 
 # 定义关键路径变量
 PROJECT_PATH = r'C:\0Program\Python\DeepSeek_Detection'
@@ -170,9 +179,49 @@ def load_features():
     }
 
 
+app.secret_key = "MultiplayerUniversalAdvantage"
+# 初始化 OAuth，注册 Microsoft 登录
+oauth = OAuth(app)
+microsoft = oauth.register(
+    name='microsoft',
+    client_id=CLIENT_ID,
+    client_secret=CLIENT_SECRET,
+    server_metadata_url='https://login.microsoftonline.com/consumers/v2.0/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid profile email'},
+)
+
+
+# 登录路由
+@app.route('/login')
+def login():
+    # 生成随机 nonce 防止 CSRF
+    nonce = os.urandom(24).hex()
+    session['nonce'] = nonce
+    redirect_uri = url_for('auth', _external=True)
+    return microsoft.authorize_redirect(redirect_uri, nonce=nonce, prompt='select_account')
+
+
+# 认证回调路由
+@app.route('/auth')
+def auth():
+    token = microsoft.authorize_access_token()
+    nonce = session.get('nonce')
+    user_info = microsoft.parse_id_token(token, nonce=nonce)
+    session['user'] = user_info  # 将用户信息存入 session
+    return redirect(url_for('index'))
+
+
+# 退出登录路由
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('index'))
+
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    user = session.get('user')
+    return render_template('index.html', user=user)
 
 
 @app.route('/detective')
@@ -285,5 +334,55 @@ def analyze_vulnerability(address):
         return jsonify({'error': str(e)}), 500
 
 
+from flask import Response, request
+import requests
+
+
+@app.route('/chat')
+def chat_proxy():
+    # 从请求中提取 iframe 的查询参数
+    shared_id = request.args.get('shared_id')
+    from_param = request.args.get('from')
+    auth_token = app.config.get('CHAT_AUTH_TOKEN')
+
+    # 如果没有传递必要的参数，返回错误
+    if not shared_id or not from_param or not auth_token:
+        return "缺少必要的参数", 400
+
+    # 根据传入的查询参数构建目标 URL
+    target_url = f"http://mcmua.cn:25564/chat/share?shared_id={shared_id}&from={from_param}&auth={auth_token}"
+    print("URL:", target_url)
+
+    try:
+        # 创建一个会话对象，保持 cookies
+        session = requests.Session()
+
+        # 向目标 URL 发送请求，带上当前请求的 cookies
+        r = session.get(target_url, cookies=request.cookies)
+        r.raise_for_status()
+
+        # 如果响应是 HTML 内容，则插入 base 标签
+        if 'text/html' in r.headers['Content-Type']:
+            content = r.text
+            # 插入 base 标签，确保所有静态资源从目标服务器加载
+            base_tag = f'<base href="http://mcmua.cn:25564/">'
+            content = content.replace("<head>", f"<head>{base_tag}", 1)
+            return Response(content, mimetype="text/html")
+
+        # 对于其他内容类型，直接返回原始内容
+        return Response(r.content, mimetype=r.headers['Content-Type'])
+
+    except Exception as e:
+        return f"代理请求错误: {str(e)}", 500
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+        debug=True,
+        # ssl_context=(
+        #     r'C:\ProgramData\certify\assets\mcmua.cn\cert.crt',
+        #     r'C:\ProgramData\certify\assets\mcmua.cn\private.key'
+        # )
+    )

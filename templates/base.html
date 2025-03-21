@@ -45,34 +45,52 @@
         <a href="/" class="logo d-flex align-items-center me-auto">
             <h1 class="sitename">VULNEX</h1>
         </a>
+
         <nav id="navmenu" class="navmenu">
             <ul>
-                <li><a href="/">主页</a></li> <!-- 首页 -->
-                <li><a href="/project-details">项目详情</a></li> <!-- 服务详情页面 -->
+                <!-- 登录按钮 / 用户信息展示 -->
+                {% if user %}
+                <div class="dropdown ml-2">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ user.get('name', user.get('preferred_username', '用户')) }}
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">退出登录</a></li>
+                    </ul>
+                </div>
+                {% else %}
+                <span class="ml-2"><a href="{{ url_for('login') }}">登录</a></span>
+                {% endif %}
+                <li><a href="/">主页</a></li>
+                <li><a href="/project-details">项目详情</a></li>
             </ul>
             <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
         </nav>
         <a class="btn-getstarted" href="/detective">开始</a>
     </div>
 </header>
+
+
 <!-- Main Content -->
 <main class="main">
     {% block content %}{% endblock %}
 </main>
 
-<!-- 侧边栏 -->
+<!-- 侧边栏部分 -->
+{% if request.endpoint != 'index' %}
 <div class="sidebar" id="aiSidebar">
     <!-- 拖拽条 -->
     <div class="resizer" id="sidebarResizer"></div>
     <iframe
-        src="http://mcmua.tpddns.cn:25564/chat/share?shared_id=9d2ce06aefff11efbe260242ac120002&from=chat&auth=AzNjBkNzljZWVkOTExZWY5MjM2MDI0Mm"
-        style="width: 100%; height: 100%; min-height: 600px; border: none;">
+            src="http://mcmua.cn:25564/chat/share?shared_id=9d2ce06aefff11efbe260242ac120002&from=chat&auth=AzNjBkNzljZWVkOTExZWY5MjM2MDI0Mm"
+            style="width: 100%; height: 100%; min-height: 600px; border: none;">
     </iframe>
 </div>
+{% endif %}
 
 <!-- 右下角展开按钮 -->
 <button class="toggle-btn" id="toggleSidebar">AI</button>
-
 
 
 <!-- Footer -->
@@ -151,45 +169,45 @@
 <script src="../static/assets/js/main.js"></script>
 
 <script>
-const sidebar = document.getElementById('aiSidebar');
-const resizer = document.getElementById('sidebarResizer');
+    const sidebar = document.getElementById('aiSidebar');
+    const resizer = document.getElementById('sidebarResizer');
 
-let isResizing = false;
-let startX;
-let startWidth;
+    let isResizing = false;
+    let startX;
+    let startWidth;
 
-resizer.addEventListener('mousedown', function(e) {
-  isResizing = true;
-  startX = e.clientX;
-  // 获取初始宽度（去掉 'px'）
-  startWidth = parseInt(window.getComputedStyle(sidebar).width, 10);
-  // 禁止选中文本
-  document.body.style.userSelect = 'none';
-});
+    resizer.addEventListener('mousedown', function (e) {
+        isResizing = true;
+        startX = e.clientX;
+        // 获取初始宽度（去掉 'px'）
+        startWidth = parseInt(window.getComputedStyle(sidebar).width, 10);
+        // 禁止选中文本
+        document.body.style.userSelect = 'none';
+    });
 
-document.addEventListener('mousemove', function(e) {
-  if (!isResizing) return;
-  // 计算鼠标移动的距离
-  let dx = startX - e.clientX;
-  // 根据拖拽方向更新宽度
-  let newWidth = startWidth + dx;
-  // 限制宽度范围
-  newWidth = Math.max(200, newWidth);  // 最小200px
-  newWidth = Math.min(600, newWidth);  // 最大600px
-  sidebar.style.width = newWidth + 'px';
-});
+    document.addEventListener('mousemove', function (e) {
+        if (!isResizing) return;
+        // 计算鼠标移动的距离
+        let dx = startX - e.clientX;
+        // 根据拖拽方向更新宽度
+        let newWidth = startWidth + dx;
+        // 限制宽度范围
+        newWidth = Math.max(200, newWidth);  // 最小200px
+        newWidth = Math.min(600, newWidth);  // 最大600px
+        sidebar.style.width = newWidth + 'px';
+    });
 
-document.addEventListener('mouseup', function() {
-  if (isResizing) {
-    isResizing = false;
-    document.body.style.userSelect = 'auto';
-  }
-});
+    document.addEventListener('mouseup', function () {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.userSelect = 'auto';
+        }
+    });
 
-// 侧边栏展开按钮控制逻辑（保持原有逻辑）
-document.getElementById('toggleSidebar').addEventListener('click', function() {
-  sidebar.classList.toggle('active');
-});
+    // 侧边栏展开按钮控制逻辑（保持原有逻辑）
+    document.getElementById('toggleSidebar').addEventListener('click', function () {
+        sidebar.classList.toggle('active');
+    });
 
 </script>
 
