@@ -336,6 +336,27 @@ h6 {
     text-transform: uppercase;
 }
 
+/* 顶部导航栏SCANIX标题样式 */
+.header .logo h1,
+nav.header h1,
+header h1.logo,
+.scanix-logo,
+.navbar h1,
+.navbar-brand h1,
+#scanix-logo {
+    color: #ffffff !important;
+}
+
+/* 更精确的SCANIX标题样式选择器 */
+.header .logo h1.sitename,
+header#header .logo h1,
+header .sitename,
+a.logo h1,
+.logo .sitename,
+header#header a.logo h1.sitename {
+    color: #ffffff !important;
+}
+
 .header .btn-getstarted,
 .header .btn-getstarted:focus {
     color: var(--contrast-color);
@@ -2315,7 +2336,52 @@ section,
         transform: rotate(360deg);
     }
 }
+/* 侧边栏样式 */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -320px; /* 初始隐藏 */
+    width: 320px; /* 默认宽度 */
+    height: 100%;
+    background-color: #fff;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    z-index: 9999;
+}
 
+.sidebar.active {
+    right: 0;
+}
+
+/* 拖拽条样式 */
+.resizer {
+    width: 5px;
+    cursor: ew-resize;
+    background-color: #ddd;
+    position: absolute;
+    top: 0;
+    left: 0; /* 靠近侧边栏左侧 */
+    bottom: 0;
+    z-index: 10000;
+}
+
+/* 右下角按钮样式 */
+.toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    font-size: 16px;
+}
 
 /*--------------------------------------------------------------
 # Starter Section Section
