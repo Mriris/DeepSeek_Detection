@@ -170,7 +170,7 @@
                                 <div class="d-flex flex-column justify-content-center order-2 order-lg-1">
 
                                     <div class="container section-title" data-aos="fade-up" style="padding-top: 20px;">
-                                        <h2><strong>漏洞分析结果</strong></h2>
+                                        <h2 style="color: #37517e;"><strong>漏洞分析结果</strong></h2>
                                         <h3 style="color: #37517e; font-size: 26px"><strong>详细分析</strong></h3>
                                     </div>
 
@@ -190,6 +190,18 @@
 
                     </section><!-- /Why Us Section -->
                 `;
+                
+                    // 在内容渲染后，确保所有标题使用深色
+                    setTimeout(() => {
+                        // 查找并修改所有标题颜色
+                        const allHeadings = document.querySelectorAll('#analysis-result h1, #analysis-result h2, #analysis-result h3, #analysis-result h4, #analysis-result h5, #analysis-result h6');
+                        allHeadings.forEach(heading => {
+                            heading.style.color = '#37517e';
+                        });
+                        
+                        // 添加调试信息
+                        console.log('已处理 ' + allHeadings.length + ' 个标题元素');
+                    }, 100); // 短暂延迟确保DOM已更新
                 }
             })
             .catch(error => {
@@ -303,7 +315,7 @@
             };
             reader.readAsDataURL(file);
 
-            // 修改按钮为“开始检测”，并直接开始检测
+            // 修改按钮为"开始检测"，并直接开始检测
             document.getElementById('action-btn').textContent = '漏洞检测中';
             currentStep = 'detect';  // 更新按钮状态
 
@@ -316,7 +328,7 @@
 
     // 刷新页面
     function resetPage() {
-        window.location.reload();  // 通过重载页面实现“重置”
+        window.location.reload();  // 通过重载页面实现"重置"
     }
 </script>
 {% endblock %}

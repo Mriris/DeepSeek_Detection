@@ -36,6 +36,132 @@
     font-size: 18px; /* 字体大小 */
 }
 
+/* 确保所有标题元素使用深色 - 使用更通用的选择器 */
+#analysis-result h1,
+#analysis-result h2,
+#analysis-result h3,
+#analysis-result h4,
+#analysis-result h5,
+#analysis-result h6,
+#detection-result h1,
+#detection-result h2,
+#detection-result h3,
+#detection-result h4,
+#detection-result h5,
+#detection-result h6,
+.custom-text h1,
+.custom-text h2,
+.custom-text h3,
+.custom-text h4,
+.custom-text h5,
+.custom-text h6,
+.custom-text strong,
+    /* 增加通用选择器覆盖所有可能的标题元素 */
+section h1, section h2, section h3, section h4, section h5, section h6,
+.section h1, .section h2, .section h3, section h4, section h5, section h6,
+.why-us h1, .why-us h2, .why-us h3, .why-us h4, .why-us h5, .why-us h6,
+.container h1, .container h2, .container h3, .container h4, .container h5, .container h6,
+.content h1, .content h2, .content h3, .content h4, .content h5, .content h6,
+    /* 添加更多覆盖范围广的选择器确保所有标题都是深色 */
+body h1, body h2, body h3, body h4, body h5, body h6,
+.light-background h1, .light-background h2, .light-background h3, .light-background h4, .light-background h5, .light-background h6,
+.dark-background h1, .dark-background h2, .dark-background h3, .dark-background h4, .dark-background h5, .dark-background h6,
+[id*="result"] h1, [id*="result"] h2, [id*="result"] h3, [id*="result"] h4, [id*="result"] h5, [id*="result"] h6,
+    /* 特别针对分析结果页面中的标题强制设置深色 */
+#analysis-result span h1, #analysis-result span h2, #analysis-result span h3, #analysis-result span h4, #analysis-result span h5,
+span[class*="custom"] h1, span[class*="custom"] h2, span[class*="custom"] h3, span[class*="custom"] h4, span[class*="custom"] h5 {
+    color: #37517e !important;
+}
+
+/* 最高优先级覆盖：使用更强的选择器确保标题在任何情况下都是深色 */
+body .custom-text * h1,
+body .custom-text * h2,
+body .custom-text * h3,
+body .custom-text * h4,
+body .custom-text * h5,
+body #analysis-result * h1,
+body #analysis-result * h2,
+body #analysis-result * h3,
+body #analysis-result * h4,
+body #analysis-result * h5,
+body section * h1,
+body section * h2,
+body section * h3,
+body section * h4,
+body section * h5,
+body .content * h1,
+body .content * h2,
+body .content * h3,
+body .content * h4,
+body .content * h5 {
+    color: #37517e !important;
+}
+
+/* 特别针对Markdown渲染内容，覆盖默认的标题样式 */
+.custom-text *,
+.custom-text *:where(h1, h2, h3, h4, h5, h6, strong, b),
+.custom-text > *,
+.custom-text > h1, .custom-text > h2, .custom-text > h3, .custom-text > h4, .custom-text > h5, .custom-text > h6,
+.custom-text div h1, .custom-text div h2, .custom-text div h3, .custom-text div h4, .custom-text div h5, .custom-text div h6 {
+    color: #37517e !important;
+}
+
+/* 直接覆盖所有Markdown内容中可能出现的标题，无视DOM结构 */
+.custom-text h1, .custom-text h2, .custom-text h3, .custom-text h4, .custom-text h5, .custom-text h6 {
+    color: #37517e !important;
+}
+
+/* 修改由marked()生成的内容中所有可能的标题元素 */
+[data-aos="fade-up"] h1,
+[data-aos="fade-up"] h2,
+[data-aos="fade-up"] h3,
+[data-aos="fade-up"] h4,
+[data-aos="fade-up"] h5,
+[data-aos="fade-up"] h6,
+.content span h1,
+.content span h2,
+.content span h3,
+.content span h4,
+.content span h5,
+.content span h6 {
+    color: #37517e !important;
+}
+
+/* 特别针对分析结果中的所有元素，强制设置标题颜色 */
+#analysis-result * {
+    color: inherit;
+}
+
+/* 修改为更精确的选择器，只影响标题元素 */
+#analysis-result * {
+    color: inherit;
+}
+
+#analysis-result h1,
+#analysis-result h2,
+#analysis-result h3,
+#analysis-result h4,
+#analysis-result h5,
+#analysis-result h6,
+#analysis-result strong,
+#analysis-result b,
+#analysis-result .h1,
+#analysis-result .h2,
+#analysis-result .h3,
+#analysis-result .h4,
+#analysis-result .h5,
+#analysis-result .h6 {
+    color: #37517e !important;
+}
+
+/* 保留普通文本的颜色 */
+#analysis-result p,
+#analysis-result span:not(span:has(h1, h2, h3, h4, h5, h6)),
+#analysis-result div:not(div:has(h1, h2, h3, h4, h5, h6)),
+#analysis-result li {
+    color: #333333;
+}
+
 /* 修改表格样式 */
 #results-table thead th {
     background-color: #5aabdd;
@@ -1035,6 +1161,7 @@ section,
     list-style: none;
     padding: 0;
 }
+
 
 .about ul li {
     padding-bottom: 5px;
@@ -2187,53 +2314,6 @@ section,
     100% {
         transform: rotate(360deg);
     }
-}
-
-/* 侧边栏样式 */
-.sidebar {
-    position: fixed;
-    top: 0;
-    right: -320px; /* 初始隐藏 */
-    width: 320px; /* 默认宽度 */
-    height: 100%;
-    background-color: #fff;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
-    transition: right 0.3s ease;
-    overflow-y: auto;
-    z-index: 9999;
-}
-
-.sidebar.active {
-    right: 0;
-}
-
-/* 拖拽条样式 */
-.resizer {
-    width: 5px;
-    cursor: ew-resize;
-    background-color: #ddd;
-    position: absolute;
-    top: 0;
-    left: 0; /* 靠近侧边栏左侧 */
-    bottom: 0;
-    z-index: 10000;
-}
-
-/* 右下角按钮样式 */
-.toggle-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 10000;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    font-size: 16px;
 }
 
 
