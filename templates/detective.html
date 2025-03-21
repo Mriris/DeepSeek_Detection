@@ -6,9 +6,9 @@
     <div class="container">
         <div class="row gy-4">
             <!-- 左侧，上传文件和操作按钮 -->
-            <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center" data-aos="zoom-out">
-                <h1>VULNEX</h1>
-                <p>通过深度学习模型分析代码中的潜在安全漏洞</p>
+            <div class="col-lg-7 order-2 order-lg-1 d-flex flex-column justify-content-center" data-aos="zoom-out">
+                <h1 style="font-size: 60px; color: #37517e">Scanix</h1>
+                <p style="font-size: 30px;; color: #444444">通过深度学习模型分析代码中的潜在安全漏洞</p>
 
                 <!-- 文件上传表单 -->
                 <form action="/detect" method="POST" enctype="multipart/form-data" id="detect-form"
@@ -24,8 +24,9 @@
                 </div>
             </div>
             <!-- 右侧，示意图（可以用任何展示漏洞检测结果的图像或保留默认） -->
-            <div class="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
+            <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
                 <img id="image-display" src="../static/assets/img/hero-img.png" class="img-fluid animated"
+                     style="margin-left: -50px;"
                      alt="示意图">
                 <!-- 增强后的图像，默认隐藏，改为显示检测结果 -->
                 <img id="enhanced-image-display" src="" style="margin-left: 20px;" class="img-fluid animated d-none"
@@ -36,18 +37,23 @@
         <!-- 加载动画 -->
         <div id="loading-animation" style="display: none;">
             <div class="spinner"></div>
-            <p>正在检测，请稍候...</p>
+            <p style="font-size: 20px;; color: #0a53be">正在检测，请稍候...</p>
         </div>
         <!-- 显示检测结果 -->
-        <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
+        <div id="detection-result" style="margin-top: 20px; color: #292d35;"></div>
         <!-- 显示漏洞分析结果 -->
-        <div id="analysis-result" style="margin-top: 20px; color: #fff;"></div>
+        <div id="analysis-result" style="margin-top: 20px; color: #533981;"></div>
     </div>
 </section><!-- /Hero Section -->
 
 <script>
+    // 移除重复的声明
+    // let currentStep = 'select';
+    // let resultData = [];  // 用于保存检测结果数据
+
     let currentStep = 'select';
     let resultData = [];  // 用于保存检测结果数据
+    let dangerLevelData = []; // 用于保存危险程度数据
 
     document.getElementById('action-btn').addEventListener('click', function (event) {
         event.preventDefault();
@@ -120,7 +126,13 @@
         fetch(`/analyze/${address}`, {
             method: 'GET'
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    // 如果状态码不是 200，抛出错误
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 document.getElementById('loading-animation').style.display = 'none';
                 if (data.error) {
@@ -128,7 +140,6 @@
                     alert("分析失败");
                 } else {
                     console.log("分析结果:", data.result);
-
                     // 提取 <think> 和外部 Markdown 内容
                     let resultContent = data.result;
                     let thinkStartIndex = resultContent.indexOf('<think>');
@@ -147,12 +158,38 @@
 
                     // 更新分析结果区域
                     document.getElementById('analysis-result').innerHTML = `
-                <h3>漏洞分析结果</h3>
-                <h4>思考部分</h4>
-                <div class="think-content">${thinkContent}</div>
-                <h4>详细分析</h4>
-                <div id="markdown-content">${marked(markdownContent)}</div>
-            `;
+                    <!-- About Section -->
+
+                    <!-- Why Us Section -->
+                    <section id="why-us" class="section why-us light-background" data-builder="section">
+
+                        <div class="container-fluid">
+
+                            <div class="row gy-4">
+
+                                <div class="d-flex flex-column justify-content-center order-2 order-lg-1">
+
+                                    <div class="container section-title" data-aos="fade-up" style="padding-top: 20px;">
+                                        <h2><strong>漏洞分析结果</strong></h2>
+                                        <h3 style="color: #37517e; font-size: 26px"><strong>详细分析</strong></h3>
+                                    </div>
+
+
+                                    <div class="d-flex flex-column justify-content-center order-2 order-lg-1">
+
+                                        <div class="content px-xl-5" data-aos="fade-up" data-aos-delay="100">
+                                            <span class="custom-text">${marked(markdownContent)}</span>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </section><!-- /Why Us Section -->
+                `;
                 }
             })
             .catch(error => {
@@ -173,7 +210,7 @@
                 <th>函数名称</th>
                 <th>出现位置</th>
                 <th>地址</th>
-                <th>优先级</th>
+                <th>危险程度</th>
             </tr>
         </thead>
         <tbody>
@@ -283,3 +320,4 @@
     }
 </script>
 {% endblock %}
+

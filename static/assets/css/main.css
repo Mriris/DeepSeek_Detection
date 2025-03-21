@@ -10,6 +10,46 @@
 # Font & Color Variables
 # Help: https://bootstrapmade.com/color-system/
 --------------------------------------------------------------*/
+
+#markdown-content {
+  word-wrap: break-word; /* 允许长单词或 URL 地址换行到下一行 */
+  word-break: break-all; /* 允许在单词内换行 */
+  color: #0c1c39;
+}
+
+.back-white{
+  background-color: white;
+  width: 95%;
+  padding: 20px;
+}
+
+.think-part{
+  text-align: center; /* 设置文本居中 */
+  color: #37517e; /* 设置字体颜色 */
+  font-size: 26px; /* 可选：设置字体大小 */
+  position: relative; /* 相对定位 */
+  top: -50px; /* 上移元素，数值可以根据需要调整 */
+}
+
+.custom-text { /*第二部分主体颜色*/
+    color: #333333 !important; /* 字体颜色 */
+    font-size: 18px; /* 字体大小 */
+}
+
+/* 修改表格样式 */
+#results-table thead th {
+    background-color: #5aabdd;
+    color: white; /* 文字颜色设为白色，提高可读性 */
+}
+
+body #results-table tbody tr:nth-child(odd) {
+    background-color:  #c0d8ef;
+}
+
+#results-table tbody tr:nth-child(even) {
+    background-color: #ffffff;
+}
+
 /* Fonts */
 :root {
   --default-font: "Open Sans",  system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -18,7 +58,7 @@
 }
 
 /* Global Colors - The following color variables are used throughout the website. Updating them here will change the color scheme of the entire website */
-:root { 
+:root {
   --background-color: #ffffff; /* Background color for the entire website, including individual sections */
   --default-color: #444444; /* Default color used for the majority of the text content across the entire website */
   --heading-color: #37517e; /* Color for headings, subheadings and title throughout the website */
@@ -40,13 +80,13 @@
 /* Color Presets - These classes override global colors when applied to any section or element, providing reuse of the sam color scheme. */
 
 .light-background {
-  --background-color: #f5f6f8;
+  --background-color: rgba(255, 255, 255, 0);
   --surface-color: #ffffff;
 }
 
 .dark-background {
-  --background-color: #37517e;
-  --default-color: #ffffff;
+  --background-color: #d3e7fb;
+  --default-color: #afafc3;
   --heading-color: #ffffff;
   --surface-color: #4668a2;
   --contrast-color: #ffffff;
@@ -91,7 +131,7 @@ h6 {
 ------------------------------*/
 .php-email-form .error-message {
   display: none;
-  background: #df1529;
+  background: #1b1b1b;
   color: #ffffff;
   text-align: left;
   padding: 15px;
@@ -143,7 +183,7 @@ h6 {
 # Global Header
 --------------------------------------------------------------*/
 .header {
-  --background-color: #3d4d6a;
+  --background-color: #4666a5;
   --heading-color: #ffffff;
   color: var(--default-color);
   background-color: var(--background-color);
@@ -808,6 +848,7 @@ section,
   font-weight: 700;
   margin-bottom: 20px;
   padding-bottom: 20px;
+  color: #37517e;
   text-transform: uppercase;
   position: relative;
 }
@@ -818,7 +859,7 @@ section,
   display: block;
   width: 160px;
   height: 1px;
-  background: color-mix(in srgb, var(--default-color), transparent 60%);
+  background: color-mix(in srgb, var(--default-color), transparent 30%);
   left: 0;
   right: 0;
   bottom: 1px;
@@ -995,6 +1036,7 @@ section,
   padding: 0;
 }
 
+
 .about ul li {
   padding-bottom: 5px;
   display: flex;
@@ -1050,8 +1092,9 @@ section,
   font-size: 34px;
 }
 
-.why-us .content p {
-  color: color-mix(in srgb, var(--default-color), transparent 30%);
+.why-us .content p {/*第二部分大标题颜色*/
+  color: color-mix(in srgb, #0c1c39, transparent 30%) !important;
+  font-size: 20px;
 }
 
 .why-us .faq-container .faq-item {
@@ -2081,10 +2124,41 @@ section,
 .think-content {
     white-space: pre-wrap; /* 保留换行但允许换行 */
     word-wrap: break-word; /* 长单词换行 */
+    word-break: break-all; /* 允许在单词内换行 */
     overflow-wrap: break-word; /* 强制换行 */
-    color: #fff; /* 保留文字颜色为白色 */
     font-family: monospace; /* 保持等宽字体 */
     padding: 10px; /* 可以根据需求调整 */
+    border-radius: 5px; /* 保持圆角效果 */
+    background-color: transparent; /* 去除背景颜色 */
+}
+
+.anlysis-content{
+  white-space: pre-wrap; /* 保留换行但允许换行 */
+  word-wrap: break-word; /* 长单词换行 */
+  word-break: break-all; /* 允许在单词内换行 */
+  overflow-wrap: break-word; /* 强制换行 */
+  font-family: monospace; /* 保持等宽字体 */
+  padding: 10px; /* 可以根据需求调整 */
+  border-radius: 5px; /* 保持圆角效果 */
+  background-color: transparent; /* 去除背景颜色 */
+}
+
+.anlysis{
+    color: #00050e; /* 文字颜色为白色 */
+    font-family: monospace; /* 保持等宽字体 */
+    font-weight: bold; /* 加粗字体 */
+    font-size: 40px;
+    padding: 30px; /* 可以根据需求调整 */
+    border-radius: 5px; /* 保持圆角效果 */
+    background-color: transparent; /* 去除背景颜色 */
+}
+
+.anlysis-result{
+    color: #0c1c39; /* 文字颜色为白色 */
+    font-family: monospace; /* 保持等宽字体 */
+    font-weight: bold; /* 加粗字体 */
+    font-size: 30px;
+    padding: 36px; /* 可以根据需求调整 */
     border-radius: 5px; /* 保持圆角效果 */
     background-color: transparent; /* 去除背景颜色 */
 }
@@ -2107,56 +2181,9 @@ section,
 }
 
 
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-}
-
-/* 侧边栏样式 */
-.sidebar {
-    position: fixed;
-    top: 0;
-    right: -320px; /* 初始隐藏 */
-    width: 320px;  /* 默认宽度 */
-    height: 100%;
-    background-color: #fff;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.5);
-    transition: right 0.3s ease;
-    overflow-y: auto;
-    z-index: 9999;
-}
-.sidebar.active {
-    right: 0;
-}
-
-/* 拖拽条样式 */
-.resizer {
-    width: 5px;
-    cursor: ew-resize;
-    background-color: #ddd;
-    position: absolute;
-    top: 0;
-    left: 0;      /* 靠近侧边栏左侧 */
-    bottom: 0;
-    z-index: 10000;
-}
-
-/* 右下角按钮样式 */
-.toggle-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 10000;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    cursor: pointer;
-    font-size: 16px;
 }
 
 

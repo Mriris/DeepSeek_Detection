@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section id="analysis-result-section">
+        <div id="analysis-result"></div>
+        <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const address = urlParams.get('address');
+
+            if (address) {
+                analyzeVulnerability(address)
+                   .then(data => {
+                        const resultDiv = document.getElementById('analysis-result');
+                        if (data.error) {
+                            resultDiv.innerHTML = `<p>分析失败: ${data.error}</p>`;
+                        } else {
+                            let resultContent = data.result;
+                            let thinkStartIndex = resultContent.indexOf('<think>');
+                            let thinkEndIndex = resultContent.indexOf('</think>');
+
+                            let thinkContent = '';
+                            let markdownContent = '';
+
+                            if (thinkStartIndex !== -1 && thinkEndIndex !== -1) {
+                                thinkContent = resultContent.slice(thinkStartIndex + 7, thinkEndIndex);
+                                markdownContent = resultContent.slice(thinkEndIndex + 8).trim();
+                            } else {
+                                markdownContent = resultContent;
+                            }
+
+                            resultDiv.innerHTML = `
+                <!-- About Section -->
+                <section id="about" class="about section" style="padding-top: 50px; ">
+
+                    <!-- Section Title -->
+                    <div class="container section-title back-white" data-aos="fade-up" style="padding-top: 60px;">
+                        <h2 style="color: #37517e;"><strong>漏洞分析结果</strong></h2>
+                        <h3 style="color: #37517e;"><strong>
+                        思考部分</strong></h3>
+                    </div><!-- End Section Title -->
+
+                    <div id="think-content" class="container back-white">
+
+                        <div id="think-content" class="row gy-4">
+
+                            <div id="think-content" class="content" data-aos="fade-up" data-aos-delay="100">
+                                <ul>
+                                    <li><i class="bi bi-check2-circle"></i>
+                                        <div id="think-content" style="color: #444444; margin-top: -20px; text-indent: 2em">${thinkContent}</div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </section><!-- /About Section -->
+
+                <!-- Why Us Section -->
+                <section id="why-us" class="section why-us light-background" data-builder="section">
+
+                    <div class="container-fluid">
+
+                        <div class="row gy-4">
+
+                            <div class="d-flex flex-column justify-content-center order-2 order-lg-1">
+
+                                <div class="container section-title" data-aos="fade-up" style="padding-top: 20px;">
+                                    <h2 style="color: #37517e;"><strong>详细分析</strong></h2>
+
+                                </div>
+
+                                <div class="d-flex flex-column justify-content-center order-2 order-lg-1">
+
+                                    <div class="content px-xl-5" data-aos="fade-up" data-aos-delay="100">
+                                        <div class="custom-text">${marked(markdownContent)}</div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                </section><!-- /Why Us Section -->
+                            `;
+                        }
+                    })
+                   .catch(error => {
+                        const resultDiv = document.getElementById('analysis-result');
+                        resultDiv.innerHTML = `<p>分析时出错: ${error.message}</p>`;
+                    });
+            } else {
+                const resultDiv = document.getElementById('analysis-result');
+                resultDiv.innerHTML = '<p>未提供地址参数</p>';
+            }
+        </script>
+    </section>
+{% endblock %}
