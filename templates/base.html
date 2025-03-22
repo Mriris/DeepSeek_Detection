@@ -45,7 +45,7 @@
 <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container-fluid container-xl position-relative d-flex align-items-center">
         <a href="/" class="logo d-flex align-items-center me-auto">
-            <h1 class="sitename" style="color: #ffffff !important;">Scanix</h1>
+            <h1 class="sitename">Scanix</h1>
         </a>
         <nav id="navmenu" class="navmenu">
             <ul>
@@ -63,21 +63,6 @@
     {% block content %}{% endblock %}
 </main>
 
-<!-- 侧边栏 -->
-<div class="sidebar" id="aiSidebar">
-    <!-- 拖拽条 -->
-    <div class="resizer" id="sidebarResizer"></div>
-    <iframe
-        src="http://127.0.0.1:25564/chat/share?shared_id=9d2ce06aefff11efbe260242ac120002&from=chat&auth=AzNjBkNzljZWVkOTExZWY5MjM2MDI0Mm"
-        style="width: 100%; height: 100%; min-height: 600px; border: none;">
-    </iframe>
-</div>
-
-<!-- 右下角展开按钮 -->
-<button class="toggle-btn" id="toggleSidebar">AI</button>
-
-
-
 <!-- Footer -->
 <footer id="footer" class="footer">
     <div class="footer-newsletter">
@@ -86,7 +71,7 @@
                 <div class="col-lg-6">
                     <h4>我们的GitHub(赛后公开)</h4>
                     <link>
-                    https://github.com/Mriris/DeepSeek_Detection</link>
+                    https://github.com/sharkiceee</link>
                 </div>
             </div>
         </div>
@@ -152,50 +137,6 @@
 
 <!-- Main JS File -->
 <script src="../static/assets/js/main.js"></script>
-
-<script>
-const sidebar = document.getElementById('aiSidebar');
-const resizer = document.getElementById('sidebarResizer');
-
-let isResizing = false;
-let startX;
-let startWidth;
-
-resizer.addEventListener('mousedown', function(e) {
-  isResizing = true;
-  startX = e.clientX;
-  // 获取初始宽度（去掉 'px'）
-  startWidth = parseInt(window.getComputedStyle(sidebar).width, 10);
-  // 禁止选中文本
-  document.body.style.userSelect = 'none';
-});
-
-document.addEventListener('mousemove', function(e) {
-  if (!isResizing) return;
-  // 计算鼠标移动的距离
-  let dx = startX - e.clientX;
-  // 根据拖拽方向更新宽度
-  let newWidth = startWidth + dx;
-  // 限制宽度范围
-  newWidth = Math.max(200, newWidth);  // 最小200px
-  newWidth = Math.min(600, newWidth);  // 最大600px
-  sidebar.style.width = newWidth + 'px';
-});
-
-document.addEventListener('mouseup', function() {
-  if (isResizing) {
-    isResizing = false;
-    document.body.style.userSelect = 'auto';
-  }
-});
-
-// 侧边栏展开按钮控制逻辑（保持原有逻辑）
-document.getElementById('toggleSidebar').addEventListener('click', function() {
-  sidebar.classList.toggle('active');
-});
-
-</script>
-
 
 </body>
 
