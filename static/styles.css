@@ -35,3 +35,22 @@ button {
 button:hover {
     background-color: #0056b3;
 }
+
+.toggle-btn {
+    position: fixed;
+    bottom: 150px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid #007BFF;
+}

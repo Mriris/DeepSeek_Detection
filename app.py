@@ -175,6 +175,61 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+
+@app.route('/register')
+def register():
+    return render_template('register.html')
+
+
+@app.route('/register_user', methods=['POST'])
+def register_user():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        # 简单的输入验证
+        if not username or not password:
+            return jsonify({'error': '用户名和密码不能为空'}), 400
+            
+        # 这里应该添加用户名和密码的存储逻辑
+        # 在实际应用中，应该使用数据库存储，并对密码进行加密
+        # 这里为了简单演示，我们只返回成功信息
+        
+        return jsonify({'success': True, 'message': '注册成功！'})
+    except Exception as e:
+        print(f"注册过程中出错: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/check_login', methods=['POST'])
+def check_login():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        # 简单的硬编码验证，实际应用中应该查询数据库
+        if username == "sharkiceee" and password == "123456":
+            return jsonify({'success': True, 'username': username})
+        else:
+            return jsonify({'success': False, 'message': '用户名或密码错误'})
+    except Exception as e:
+        print(f"登录验证过程中出错: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/houtai')
+def houtai():
+    # 获取URL参数中的用户名
+    username = request.args.get('username', '')
+    return render_template('houtai.html', username=username)
+
+
 @app.route('/detective')
 def portfolio_details():
     return render_template('detective.html')
