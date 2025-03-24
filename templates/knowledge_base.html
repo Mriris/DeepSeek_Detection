@@ -1,0 +1,1397 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<meta charset="utf-8">
+<title>本地知识库</title>
+<section id="hero" class="hero section light-background" style="background-color: #e8f3e8">
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="page-header mb-4">
+            <h2><i class="bi bi-journal-text"></i> 本地知识库管理</h2>
+            <p class="text-muted">基于RAGFlow管理和操作本地知识库资源</p>
+        </div>
+        <div class="row gy-4">
+            <div class="col-md-12 mb-4">
+                <p>通过本地知识库，您可以上传、管理和检索各种文档资源，支持与大语言模型结合使用。</p>
+            </div>
+            
+            <!-- 左侧区域 - 文档上传与管理 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4>文档管理</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="documentUploadForm">
+                            <div class="mb-3">
+                                <label for="documentFile" class="form-label">上传文档</label>
+                                <input type="file" class="form-control" id="documentFile" multiple accept=".pdf,.txt,.doc,.docx,.md,.json,.csv">
+                                <div class="form-text">支持各种文档格式，包括PDF、文本文件、Word文档等</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="collectionName" class="form-label">知识库集合名称</label>
+                                <input type="text" class="form-control" id="collectionName" placeholder="为您的文档集合命名">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="chunksSize" class="form-label">文档分块大小</label>
+                                <select class="form-select" id="chunksSize">
+                                    <option value="256">256 tokens (短块)</option>
+                                    <option value="512" selected>512 tokens (中等)</option>
+                                    <option value="1024">1024 tokens (长块)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="overlapSize" class="form-label">块重叠大小</label>
+                                <input type="number" class="form-control" id="overlapSize" min="0" max="256" value="50">
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="extractMetadata" checked>
+                                <label class="form-check-label" for="extractMetadata">提取元数据</label>
+                            </div>
+                            
+                            <button type="button" class="btn btn-success w-100" onclick="uploadDocuments()">上传并处理文档</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧区域 - 知识库设置和检索 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4>知识库列表</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>知识库名称</th>
+                                    <th>文档数量</th>
+                                    <th>创建日期</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="knowledgeBaseList">
+                                <tr>
+                                    <td>漏洞文档集</td>
+                                    <td>15</td>
+                                    <td>2024-03-20</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="showKnowledgeBaseDetails('漏洞文档集')">查看</button>
+                                        <button class="btn btn-sm btn-danger">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>CVE库</td>
+                                    <td>108</td>
+                                    <td>2024-03-15</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="showKnowledgeBaseDetails('CVE库')">查看</button>
+                                        <button class="btn btn-sm btn-danger">删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 知识库检索测试 -->
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h4>知识检索测试</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="queryKnowledgeBase" class="form-label">选择知识库</label>
+                            <select class="form-select" id="queryKnowledgeBase">
+                                <option value="漏洞文档集">漏洞文档集</option>
+                                <option value="CVE库">CVE库</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="queryText" class="form-label">输入查询问题</label>
+                            <textarea class="form-control" id="queryText" rows="3" placeholder="例如：缓冲区溢出的常见原因是什么？"></textarea>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100" onclick="testQuery()">执行查询</button>
+                        
+                        <div class="mt-3" id="queryResultsContainer" style="display: none;">
+                            <h5>查询结果</h5>
+                            <div id="queryResults" class="p-3 bg-light" style="max-height: 300px; overflow-y: auto; border-radius: 5px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 知识库详情模态框 -->
+            <div class="modal fade" id="knowledgeBaseDetailsModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="knowledgeBaseDetailsTitle">知识库详情</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">文档列表</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">知识库设置</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="graph-tab" data-bs-toggle="tab" data-bs-target="#graph" type="button" role="tab">知识图谱</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content p-3" id="myTabContent">
+                                <div class="tab-pane fade show active" id="documents" role="tabpanel">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>文档名称</th>
+                                                <th>类型</th>
+                                                <th>大小</th>
+                                                <th>块数</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="documentsList">
+                                            <!-- 文档将通过JavaScript加载 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="tab-pane fade" id="settings" role="tabpanel">
+                                    <form id="knowledgeBaseSettingsForm">
+                                        <div class="mb-3">
+                                            <label for="embeddingModel" class="form-label">嵌入模型</label>
+                                            <select class="form-select" id="embeddingModel">
+                                                <option value="bge-large-zh">BGE-Large-ZH</option>
+                                                <option value="text2vec">Text2Vec</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="vectorStore" class="form-label">向量存储类型</label>
+                                            <select class="form-select" id="vectorStore">
+                                                <option value="faiss">FAISS</option>
+                                                <option value="milvus">Milvus</option>
+                                                <option value="qdrant">Qdrant</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="enableRerank" checked>
+                                            <label class="form-check-label" for="enableRerank">启用结果重排序</label>
+                                        </div>
+                                        <button type="button" class="btn btn-primary">保存设置</button>
+                                    </form>
+                                </div>
+                                <div class="tab-pane fade" id="graph" role="tabpanel">
+                                    <div class="alert alert-info">
+                                        知识图谱视图将在这里展示您的文档之间的关系
+                                    </div>
+                                    <div id="knowledgeGraph" style="height: 400px; background-color: #f8f9fa; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                                        <p class="text-muted">知识图谱加载中...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 创建知识库模态框 -->
+            <div class="modal fade" id="createKnowledgeBaseModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title">创建新知识库</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="createKnowledgeBaseForm">
+                                <div class="mb-3">
+                                    <label for="newKbName" class="form-label">知识库名称</label>
+                                    <input type="text" class="form-control" id="newKbName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newKbDescription" class="form-label">描述</label>
+                                    <textarea class="form-control" id="newKbDescription" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newKbLanguage" class="form-label">语言</label>
+                                    <select class="form-select" id="newKbLanguage">
+                                        <option value="Chinese">中文</option>
+                                        <option value="English">英文</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-success" onclick="createNewKnowledgeBase()">创建</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // 页面加载时获取知识库列表
+    document.addEventListener('DOMContentLoaded', function() {
+        // 先测试连接
+        testRAGFlowConnection();
+    });
+    
+    // 测试RAGFlow连接
+    function testRAGFlowConnection() {
+        // 先显示连接中的状态
+        document.querySelector('.col-md-12.mb-4').insertAdjacentHTML('beforeend', `
+            <div id="connection-status" class="alert alert-info">
+                <h5>RAGFlow连接中...</h5>
+                <p>正在尝试连接RAGFlow服务，请稍候...</p>
+            </div>
+        `);
+        
+        fetch('/api/ragflow/debug_kb')
+            .then(response => response.json())
+            .then(debugData => {
+                console.log('RAGFlow调试信息:', debugData);
+                
+                if (debugData.success) {
+                    // 如果可以获取原始响应，显示在控制台以便调试
+                    console.log('RAGFlow原始响应:', debugData.raw_response);
+                }
+                
+                // 继续正常连接测试
+                fetch('/api/ragflow/test_connection')
+                    .then(response => response.json())
+                    .then(data => {
+                        // 移除连接中的状态
+                        document.getElementById('connection-status').remove();
+                        
+                        if (data.success) {
+                            console.log('RAGFlow连接成功');
+                            // 连接成功后获取知识库列表
+                            fetchKnowledgeBases();
+                        } else {
+                            console.error('RAGFlow连接失败:', data.message);
+                            showErrorMessage(`RAGFlow连接失败: ${data.message}<br>请确保RAGFlow服务已正确启动，并检查API地址配置。`);
+                            
+                            // 显示配置提示
+                            document.querySelector('.col-md-12.mb-4').insertAdjacentHTML('beforeend', `
+                                <div class="alert alert-warning">
+                                    <h5>RAGFlow服务未连接</h5>
+                                    <p>系统无法连接到RAGFlow服务。请检查以下事项：</p>
+                                    <ol>
+                                        <li>确保RAGFlow服务已正确启动</li>
+                                        <li>当前连接地址为: http://localhost/api/v1</li>
+                                        <li>已配置API Key认证</li>
+                                        <li>RAGFlow响应信息: <pre>${JSON.stringify(data.status || {}, null, 2)}</pre></li>
+                                        <li>请检查RAGFlow API是否与我们预期的接口兼容</li>
+                                    </ol>
+                                    <div class="mt-3">
+                                        <button class="btn btn-primary" onclick="testRAGFlowConnection()">重新测试连接</button>
+                                        <button class="btn btn-secondary" onclick="testAllRAGFlowPaths()">尝试所有可能的API路径</button>
+                                        <button class="btn btn-info" onclick="detectApiFormat()">自动检测API格式</button>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    })
+                    .catch(error => {
+                        // 移除连接中的状态
+                        if (document.getElementById('connection-status')) {
+                            document.getElementById('connection-status').remove();
+                        }
+                        
+                        console.error('测试RAGFlow连接时出错:', error);
+                        showErrorMessage('无法连接到RAGFlow服务，请确保RAGFlow已正确运行且可以从Web服务器访问。');
+                    });
+            })
+            .catch(error => {
+                // 移除连接中的状态
+                if (document.getElementById('connection-status')) {
+                    document.getElementById('connection-status').remove();
+                }
+                
+                console.error('获取RAGFlow调试信息出错:', error);
+                showErrorMessage('无法获取RAGFlow调试信息，请检查网络连接和RAGFlow服务状态。');
+            });
+    }
+    
+    // 获取知识库列表
+    function fetchKnowledgeBases() {
+        fetch('/api/knowledge_bases')
+            .then(response => response.json())
+            .then(data => {
+                console.log('获取到知识库列表响应:', data);
+                
+                if (data.error) {
+                    showErrorMessage(data.error);
+                    return;
+                }
+                
+                // 处理可能的多种响应格式
+                let kbList = [];
+                
+                if (Array.isArray(data)) {
+                    // 如果是数组，直接使用
+                    kbList = data;
+                } else if (typeof data === 'object') {
+                    // 如果是对象，尝试不同的字段
+                    if (Array.isArray(data.data)) {
+                        kbList = data.data;
+                    } else if (Array.isArray(data.result)) {
+                        kbList = data.result;
+                    } else if (data.code === 100 && data.message !== undefined) {
+                        // 特殊情况：可能是API要求认证或尚未创建知识库
+                        document.querySelector('.col-md-12.mb-4').insertAdjacentHTML('beforeend', `
+                            <div class="alert alert-info">
+                                <h5>RAGFlow连接成功但未找到知识库</h5>
+                                <p>您的RAGFlow API响应了code=100的状态码，可能是以下原因之一：</p>
+                                <ol>
+                                    <li>您尚未在RAGFlow中创建任何知识库</li>
+                                    <li>API需要额外的身份验证参数</li>
+                                    <li>API响应格式与期望不同</li>
+                                </ol>
+                                <div class="mt-3">
+                                    <a href="http://localhost" target="_blank" class="btn btn-primary">打开RAGFlow界面</a>
+                                    <button class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#createKnowledgeBaseModal">创建新知识库</button>
+                                </div>
+                            </div>
+                        `);
+                        kbList = [];
+                    }
+                }
+                
+                updateKnowledgeBaseList(kbList);
+                updateKnowledgeBaseDropdown(kbList);
+            })
+            .catch(error => {
+                console.error('获取知识库列表出错:', error);
+                showErrorMessage('无法连接到RAGFlow服务，请确保RAGFlow已正确运行。');
+            });
+    }
+    
+    // 显示错误消息
+    function showErrorMessage(message) {
+        const errorHtml = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        document.querySelector('.container').insertAdjacentHTML('afterbegin', errorHtml);
+    }
+    
+    // 更新知识库列表
+    function updateKnowledgeBaseList(data) {
+        const kbList = document.getElementById('knowledgeBaseList');
+        let html = '';
+        
+        if (data.length === 0) {
+            html = '<tr><td colspan="4" class="text-center">暂无知识库</td></tr>';
+        } else {
+            data.forEach(kb => {
+                const docCount = kb.document_count || 0;
+                const createdAt = new Date(kb.created_at || Date.now()).toISOString().slice(0, 10);
+                
+                html += `
+                    <tr>
+                        <td>${kb.name}</td>
+                        <td>${docCount}</td>
+                        <td>${createdAt}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="showKnowledgeBaseDetails('${kb.id}', '${kb.name}')">查看</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteKnowledgeBase('${kb.id}')">删除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        kbList.innerHTML = html;
+    }
+    
+    // 更新知识库下拉列表
+    function updateKnowledgeBaseDropdown(data) {
+        const dropdown = document.getElementById('queryKnowledgeBase');
+        dropdown.innerHTML = '';
+        
+        if (data.length === 0) {
+            dropdown.innerHTML = '<option value="">暂无知识库</option>';
+        } else {
+            data.forEach(kb => {
+                const option = document.createElement('option');
+                option.value = kb.id;
+                option.textContent = kb.name;
+                dropdown.appendChild(option);
+            });
+        }
+    }
+    
+    // 上传文档功能
+    function uploadDocuments() {
+        const fileInput = document.getElementById('documentFile');
+        const collectionName = document.getElementById('collectionName').value;
+        
+        if (!fileInput.files.length) {
+            alert('请选择至少一个文档');
+            return;
+        }
+        
+        if (!collectionName) {
+            alert('请输入知识库集合名称');
+            return;
+        }
+        
+        // 先创建知识库
+        fetch('/api/knowledge_bases/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: collectionName,
+                description: '通过Web界面创建的知识库'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`创建知识库失败: ${data.error}`);
+                return;
+            }
+            
+            const kbId = data.id;
+            
+            // 这里需要上传文件到RAGFlow
+            // 由于RAGFlow有自己的上传API，我们可能需要使用FormData来上传文件
+            // 此处为简化实现，仅显示成功消息
+            
+            alert('知识库创建成功！现在需要通过RAGFlow界面上传文档。');
+            
+            // 重新获取知识库列表
+            fetchKnowledgeBases();
+            
+            // 重置表单
+            document.getElementById('documentUploadForm').reset();
+        })
+        .catch(error => {
+            console.error('创建知识库出错:', error);
+            alert('创建知识库失败，请稍后重试');
+        });
+    }
+    
+    // 显示知识库详情
+    function showKnowledgeBaseDetails(kbId, kbName) {
+        // 设置模态框标题
+        document.getElementById('knowledgeBaseDetailsTitle').textContent = `知识库详情: ${kbName}`;
+        
+        // 当前知识库ID保存为全局变量以供其他函数使用
+        window.currentKbId = kbId;
+        window.currentKbName = kbName;
+        
+        // 显示加载状态
+        document.getElementById('documentsList').innerHTML = '<tr><td colspan="5" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div></td></tr>';
+        
+        // 获取知识库数据集
+        fetch(`/api/knowledge_bases/${kbId}/datasets`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('documentsList').innerHTML = `<tr><td colspan="5" class="text-center text-danger">${data.error}</td></tr>`;
+                    console.error('获取知识库数据集出错:', data.error);
+                    return;
+                }
+                
+                console.log('获取到的文档数据:', data);
+                
+                // 填充文档列表
+                let html = '';
+                if (!data || data.length === 0) {
+                    html = '<tr><td colspan="5" class="text-center">暂无文档</td></tr>';
+                } else {
+                    data.forEach(doc => {
+                        // 处理可能的数据格式差异
+                        const docName = doc.name || doc.file_name || '未命名文档';
+                        const docType = doc.type || doc.file_type || '未知';
+                        const docSize = doc.size || doc.file_size || 0;
+                        const chunksCount = doc.chunks_count || doc.chunk_count || 0;
+                        
+                        const formattedSize = docSize ? `${(docSize / 1024 / 1024).toFixed(2)}MB` : '未知';
+                        
+                        html += `
+                            <tr data-doc-id="${doc.id || ''}">
+                                <td>${docName}</td>
+                                <td>${docType}</td>
+                                <td>${formattedSize}</td>
+                                <td>${chunksCount}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary doc-preview-btn">预览</button>
+                                    <button class="btn btn-sm btn-success doc-download-btn">下载</button>
+                                    <button class="btn btn-sm btn-danger doc-delete-btn">删除</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+                document.getElementById('documentsList').innerHTML = html;
+                
+                // 为新添加的按钮绑定事件处理器
+                document.querySelectorAll('.doc-preview-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const docId = this.closest('tr').dataset.docId;
+                        const docName = this.closest('tr').querySelector('td:first-child').textContent;
+                        previewDocument(docId, docName);
+                    });
+                });
+                
+                document.querySelectorAll('.doc-download-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const docId = this.closest('tr').dataset.docId;
+                        const docName = this.closest('tr').querySelector('td:first-child').textContent;
+                        downloadDocument(docId, docName);
+                    });
+                });
+                
+                document.querySelectorAll('.doc-delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const docId = this.closest('tr').dataset.docId;
+                        const docName = this.closest('tr').querySelector('td:first-child').textContent;
+                        deleteDocument(docId, docName);
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('获取知识库数据集出错:', error);
+                document.getElementById('documentsList').innerHTML = '<tr><td colspan="5" class="text-center text-danger">获取数据集失败: ' + error.message + '</td></tr>';
+            });
+        
+        // 显示模态框
+        new bootstrap.Modal(document.getElementById('knowledgeBaseDetailsModal')).show();
+    }
+    
+    // 删除知识库
+    function deleteKnowledgeBase(kbId) {
+        if (confirm('确定要删除此知识库吗？此操作不可恢复！')) {
+            // 此处应调用RAGFlow的删除API
+            alert('知识库删除功能需要在RAGFlow界面操作');
+        }
+    }
+    
+    // 测试查询功能
+    function testQuery() {
+        const queryText = document.getElementById('queryText').value;
+        const kbId = document.getElementById('queryKnowledgeBase').value;
+        
+        if (!queryText) {
+            alert('请输入查询问题');
+            return;
+        }
+        
+        if (!kbId) {
+            alert('请选择知识库');
+            return;
+        }
+        
+        // 显示加载状态
+        document.getElementById('queryResultsContainer').style.display = 'block';
+        document.getElementById('queryResults').innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p>正在查询中...</p></div>';
+        
+        // 调用查询API
+        fetch(`/api/knowledge_bases/${kbId}/query`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                query: queryText
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('queryResults').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            // 处理查询结果
+            let results = '<h6>检索到的相关内容:</h6>';
+            
+            if (!data.documents || data.documents.length === 0) {
+                results += '<div class="alert alert-info">未找到相关信息</div>';
+            } else {
+                data.documents.forEach((doc, index) => {
+                    const borderClass = index === 0 ? 'border-primary' : 'border-success';
+                    results += `
+                        <div class="mb-3 p-2 border-start ${borderClass} border-3">
+                            <p><strong>来源:</strong> ${doc.source || '未知来源'}</p>
+                            <p>${doc.content || doc.text || '内容为空'}</p>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('queryResults').innerHTML = results;
+        })
+        .catch(error => {
+            console.error('查询出错:', error);
+            document.getElementById('queryResults').innerHTML = '<div class="alert alert-danger">查询过程中出错，请稍后重试</div>';
+        });
+    }
+
+    // 创建新知识库
+    function createNewKnowledgeBase() {
+        const name = document.getElementById('newKbName').value.trim();
+        const description = document.getElementById('newKbDescription').value.trim();
+        
+        if (!name) {
+            alert('请输入知识库名称');
+            return;
+        }
+        
+        // 添加加载状态
+        const createBtn = document.querySelector('#createKnowledgeBaseModal .btn-success');
+        const originalText = createBtn.textContent;
+        createBtn.disabled = true;
+        createBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 创建中...';
+        
+        // 发送创建请求
+        fetch('/api/knowledge_bases/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                description: description
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 恢复按钮状态
+            createBtn.disabled = false;
+            createBtn.textContent = originalText;
+            
+            if (data.error) {
+                alert(`创建知识库失败: ${data.error}`);
+                return;
+            }
+            
+            // 成功创建
+            console.log('创建知识库成功:', data);
+            
+            // 关闭模态框
+            bootstrap.Modal.getInstance(document.getElementById('createKnowledgeBaseModal')).hide();
+            
+            // 显示成功消息
+            const successMsg = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    知识库"${name}"创建成功！
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            document.querySelector('.container').insertAdjacentHTML('afterbegin', successMsg);
+            
+            // 重置表单
+            document.getElementById('createKnowledgeBaseForm').reset();
+            
+            // 刷新知识库列表
+            fetchKnowledgeBases();
+        })
+        .catch(error => {
+            console.error('创建知识库出错:', error);
+            createBtn.disabled = false;
+            createBtn.textContent = originalText;
+            alert('创建知识库失败，请稍后重试');
+        });
+    }
+    
+    // 测试所有可能的RAGFlow API路径
+    function testAllRAGFlowPaths() {
+        document.querySelector('.col-md-12.mb-4').insertAdjacentHTML('beforeend', `
+            <div id="all-paths-status" class="alert alert-info">
+                <h5>正在测试所有可能的API路径...</h5>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                </div>
+            </div>
+        `);
+        
+        fetch('/api/ragflow/test_all_paths')
+            .then(response => response.json())
+            .then(data => {
+                // 移除测试中状态
+                document.getElementById('all-paths-status').remove();
+                
+                // 显示测试结果
+                let resultsHtml = `
+                    <div class="alert alert-info">
+                        <h5>所有API路径测试结果</h5>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                `;
+                
+                // 先检查是否有成功的路径
+                const successPaths = Object.entries(data).filter(([_, info]) => info.success);
+                if (successPaths.length > 0) {
+                    resultsHtml += `<div class="alert alert-success">发现${successPaths.length}个有效的API路径！</div>`;
+                    
+                    // 建议使用第一个成功的路径
+                    const [key, info] = successPaths[0];
+                    resultsHtml += `
+                        <div class="mb-3">
+                            <p><strong>建议使用的API路径:</strong> ${info.url.replace('/kb', '')}</p>
+                            <p>请更新app.py中的RAGFLOW_API_URL配置为以上URL，然后重启应用程序。</p>
+                        </div>
+                    `;
+                } else {
+                    resultsHtml += `<div class="alert alert-danger">未找到有效的API路径，请检查RAGFlow服务是否正确运行</div>`;
+                }
+                
+                // 显示所有测试结果
+                resultsHtml += `<div class="mt-3"><h6>详细测试结果:</h6><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                
+                resultsHtml += `
+                        </div>
+                    </div>
+                `;
+                
+                document.querySelector('.col-md-12.mb-4').insertAdjacentHTML('beforeend', resultsHtml);
+            })
+            .catch(error => {
+                // 移除测试中状态
+                if (document.getElementById('all-paths-status')) {
+                    document.getElementById('all-paths-status').remove();
+                }
+                
+                console.error('测试所有API路径时出错:', error);
+                showErrorMessage('测试API路径时出错，请检查网络连接');
+            });
+    }
+
+    // 自动检测API格式
+    function detectApiFormat() {
+        document.querySelector('.col-md-12.mb-4').insertAdjacentHTML('beforeend', `
+            <div id="detect-api-status" class="alert alert-info">
+                <h5>正在检测API格式...</h5>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                </div>
+            </div>
+        `);
+        
+        fetch('/api/ragflow/detect_api_format')
+            .then(response => response.json())
+            .then(data => {
+                // 移除检测中状态
+                document.getElementById('detect-api-status').remove();
+                
+                // 显示检测结果
+                let resultsHtml = `
+                    <div class="alert alert-info">
+                        <h5>API格式检测结果</h5>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                `;
+                
+                // 先检查是否有成功的路径
+                const successPaths = Object.entries(data).filter(([_, info]) => info.success);
+                if (successPaths.length > 0) {
+                    resultsHtml += `<div class="alert alert-success">发现${successPaths.length}个有效的API格式！</div>`;
+                    
+                    // 建议使用第一个成功的路径
+                    const [key, info] = successPaths[0];
+                    resultsHtml += `
+                        <div class="mb-3">
+                            <p><strong>建议使用的API格式:</strong> ${info.full_url}</p>
+                            <p>请更新app.py中的RAGFLOW_API_URL和API路径配置，然后重启应用程序。</p>
+                        </div>
+                    `;
+                } else {
+                    resultsHtml += `<div class="alert alert-danger">未找到有效的API格式，请检查RAGFlow服务是否正确运行</div>`;
+                }
+                
+                // 显示所有检测结果
+                resultsHtml += `<div class="mt-3"><h6>详细检测结果:</h6><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                
+                resultsHtml += `
+                        </div>
+                    </div>
+                `;
+                
+                document.querySelector('.col-md-12.mb-4').insertAdjacentHTML('beforeend', resultsHtml);
+            })
+            .catch(error => {
+                // 移除检测中状态
+                if (document.getElementById('detect-api-status')) {
+                    document.getElementById('detect-api-status').remove();
+                }
+                
+                console.error('检测API格式时出错:', error);
+                showErrorMessage('检测API格式时出错，请检查网络连接');
+            });
+    }
+
+    // 预览文档功能
+    function previewDocument(docId, docName, keywords = '') {
+        console.log(`预览文档: ${docName}, ID: ${docId}, 关键词: ${keywords}`);
+        
+        // 创建预览模态框
+        if (!document.getElementById('documentPreviewModal')) {
+            document.body.insertAdjacentHTML('beforeend', `
+                <div class="modal fade" id="documentPreviewModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header bg-info text-white">
+                                <h5 class="modal-title" id="documentPreviewTitle">文档预览</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- 添加关键词搜索功能 -->
+                                <div class="mb-3">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="keywordSearch" placeholder="输入关键词搜索文档内容">
+                                        <button class="btn btn-primary" type="button" id="searchDocumentBtn">
+                                            <i class="bi bi-search"></i> 搜索
+                                        </button>
+                                        <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+                                            <i class="bi bi-x-circle"></i> 清除
+                                        </button>
+                                    </div>
+                                    <div class="form-text">输入关键词后点击搜索，将高亮显示包含关键词的文本块</div>
+                                </div>
+                                <div id="documentPreviewContent" class="p-2" style="max-height: 500px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+        
+        // 设置标题
+        document.getElementById('documentPreviewTitle').textContent = `文档预览: ${docName}`;
+        
+        // 获取当前知识库ID
+        const kbId = window.currentKbId;
+        
+        if (!kbId || !docId) {
+            showPreviewError('知识库ID或文档ID无效');
+            return;
+        }
+        
+        // 显示加载中
+        document.getElementById('documentPreviewContent').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">正在加载文档内容...</p>
+            </div>
+        `;
+        
+        // 显示模态框
+        new bootstrap.Modal(document.getElementById('documentPreviewModal')).show();
+        
+        // 保存文档信息供搜索功能使用
+        window.currentDocId = docId;
+        window.currentDocName = docName;
+        
+        // 如果有关键词，则填充到搜索框中
+        if (keywords) {
+            document.getElementById('keywordSearch').value = keywords;
+        }
+        
+        // 获取文档内容
+        loadDocumentWithKeywords(kbId, docId, keywords);
+        
+        // 绑定搜索按钮事件
+        document.getElementById('searchDocumentBtn').onclick = function() {
+            const keywords = document.getElementById('keywordSearch').value.trim();
+            loadDocumentWithKeywords(kbId, docId, keywords);
+        };
+        
+        // 绑定清除按钮事件
+        document.getElementById('clearSearchBtn').onclick = function() {
+            document.getElementById('keywordSearch').value = '';
+            loadDocumentWithKeywords(kbId, docId, '');
+        };
+        
+        // 绑定回车键触发搜索
+        document.getElementById('keywordSearch').onkeydown = function(e) {
+            if (e.key === 'Enter') {
+                const keywords = document.getElementById('keywordSearch').value.trim();
+                loadDocumentWithKeywords(kbId, docId, keywords);
+            }
+        };
+    }
+    
+    // 加载带关键词的文档内容
+    function loadDocumentWithKeywords(kbId, docId, keywords) {
+        // 显示加载中
+        document.getElementById('documentPreviewContent').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">正在${keywords ? '搜索' : '加载'}文档内容...</p>
+            </div>
+        `;
+        
+        // 构建URL，添加关键词参数
+        let url = `/api/knowledge_bases/${kbId}/documents/${docId}/preview`;
+        if (keywords) {
+            url += `?keywords=${encodeURIComponent(keywords)}`;
+        }
+        
+        // 获取文档内容
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    showPreviewError(data.error);
+                    return;
+                }
+                
+                // 显示文档内容
+                displayDocumentContent(data, window.currentDocName, keywords);
+            })
+            .catch(error => {
+                console.error('获取文档预览失败:', error);
+                showPreviewError(`获取文档内容失败: ${error.message}`);
+            });
+    }
+    
+    // 显示预览错误信息
+    function showPreviewError(message) {
+        document.getElementById('documentPreviewContent').innerHTML = `
+            <div class="alert alert-danger">
+                <h5>预览失败</h5>
+                <p>${message}</p>
+                <p>可能的原因:</p>
+                <ul>
+                    <li>文档格式不支持在线预览</li>
+                    <li>文档内容尚未完全处理</li>
+                    <li>服务器预览功能未配置</li>
+                </ul>
+                <p>建议使用RAGFlow原生界面查看文档内容</p>
+            </div>
+        `;
+    }
+    
+    // 根据文档类型显示内容
+    function displayDocumentContent(data, docName, keywords = '') {
+        const previewContent = document.getElementById('documentPreviewContent');
+        
+        // 判断是否有文档内容
+        if ((!data.chunks || !Array.isArray(data.chunks) || data.chunks.length === 0) && 
+            !data.content) {
+            showPreviewError('文档内容为空或格式不受支持');
+            return;
+        }
+        
+        // 确定文档类型
+        let fileType = 'txt';
+        if (docName.toLowerCase().endsWith('.pdf')) fileType = 'pdf';
+        else if (docName.toLowerCase().endsWith('.docx') || docName.toLowerCase().endsWith('.doc')) fileType = 'doc';
+        
+        let html = '';
+        
+        // 如果有chunks数据（新格式）
+        if (data.chunks && Array.isArray(data.chunks) && data.chunks.length > 0) {
+            // 添加搜索结果统计信息
+            if (keywords) {
+                const matchedChunks = data.chunks.filter(chunk => 
+                    chunk.content && chunk.content.toLowerCase().includes(keywords.toLowerCase())
+                ).length;
+                
+                const searchStatsHtml = `
+                    <div class="alert alert-info mb-3">
+                        <span>关键词 "${keywords}" 共在 ${matchedChunks} 个文本块中找到匹配</span>
+                        ${matchedChunks > 0 ? '<span class="ms-2 badge bg-success">已自动展开匹配的文本块</span>' : ''}
+                    </div>
+                `;
+                html += searchStatsHtml;
+            }
+            
+            html += `
+                <div class="mb-3">
+                    <h5>文档内容（共${data.total_chunks || data.chunks.length}个文本块）</h5>
+                    <div class="accordion" id="chunksAccordion">
+            `;
+            
+            data.chunks.forEach((chunk, index) => {
+                const chunkId = `chunk-${index}`;
+                
+                // 检查是否包含关键词
+                const hasKeyword = keywords && chunk.content && 
+                                 chunk.content.toLowerCase().includes(keywords.toLowerCase());
+                
+                // 添加关键词高亮
+                let highlightedContent = chunk.content || '';
+                if (keywords && highlightedContent) {
+                    // 使用正则表达式进行不区分大小写的替换，保留原始大小写
+                    const regex = new RegExp(keywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                    highlightedContent = highlightedContent.replace(regex, match => 
+                        `<mark class="bg-warning">${match}</mark>`
+                    );
+                }
+                
+                html += `
+                    <div class="accordion-item ${hasKeyword ? 'border-warning' : ''}">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button ${hasKeyword || index === 0 ? '' : 'collapsed'}" 
+                                    type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#${chunkId}">
+                                块 #${index + 1}${chunk.id ? ' (ID: ' + chunk.id + ')' : ''}
+                                ${hasKeyword ? '<span class="ms-2 badge bg-warning text-dark">包含关键词</span>' : ''}
+                            </button>
+                        </h2>
+                        <div id="${chunkId}" class="accordion-collapse collapse ${hasKeyword || index === 0 ? 'show' : ''}" 
+                             data-bs-parent="#chunksAccordion">
+                            <div class="accordion-body">
+                                <pre class="mb-0">${highlightedContent}</pre>
+                                ${chunk.image_id ? `<div class="mt-2"><strong>图片ID:</strong> ${chunk.image_id}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            // 添加文档元数据信息
+            if (data.doc_info) {
+                html += `
+                    <div class="card mt-3">
+                        <div class="card-header bg-secondary text-white">文档元数据</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>文件名:</strong> ${data.doc_info.name || '未知'}</p>
+                                    <p><strong>大小:</strong> ${formatFileSize(data.doc_info.size)}</p>
+                                    <p><strong>类型:</strong> ${data.doc_info.type || '未知'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>分块数量:</strong> ${data.doc_info.chunk_count || 0}</p>
+                                    <p><strong>标记数:</strong> ${data.doc_info.token_count || 0}</p>
+                                    <p><strong>创建时间:</strong> ${data.doc_info.create_date || '未知'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        // 如果有旧版chunks数据格式
+        else if (data.chunks && Array.isArray(data.chunks) && data.chunks.length > 0) {
+            // 添加搜索结果统计信息
+            if (keywords) {
+                const matchedChunks = data.chunks.filter(chunk => 
+                    (chunk.content || chunk.text) && 
+                    (chunk.content || chunk.text).toLowerCase().includes(keywords.toLowerCase())
+                ).length;
+                
+                const searchStatsHtml = `
+                    <div class="alert alert-info mb-3">
+                        <span>关键词 "${keywords}" 共在 ${matchedChunks} 个文本块中找到匹配</span>
+                        ${matchedChunks > 0 ? '<span class="ms-2 badge bg-success">已自动展开匹配的文本块</span>' : ''}
+                    </div>
+                `;
+                html += searchStatsHtml;
+            }
+            
+            html += `
+                <div class="mb-3">
+                    <h5>文档内容（分块显示）</h5>
+                    <div class="accordion" id="chunksAccordion">
+            `;
+            
+            data.chunks.forEach((chunk, index) => {
+                const chunkId = `chunk-${index}`;
+                const chunkContent = chunk.content || chunk.text;
+                
+                // 检查是否包含关键词
+                const hasKeyword = keywords && chunkContent && 
+                                 chunkContent.toLowerCase().includes(keywords.toLowerCase());
+                
+                // 添加关键词高亮
+                let highlightedContent = chunkContent || '';
+                if (keywords && highlightedContent) {
+                    // 使用正则表达式进行不区分大小写的替换，保留原始大小写
+                    const regex = new RegExp(keywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                    highlightedContent = highlightedContent.replace(regex, match => 
+                        `<mark class="bg-warning">${match}</mark>`
+                    );
+                }
+                
+                html += `
+                    <div class="accordion-item ${hasKeyword ? 'border-warning' : ''}">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button ${hasKeyword || index === 0 ? '' : 'collapsed'}" 
+                                   type="button" data-bs-toggle="collapse" data-bs-target="#${chunkId}">
+                                块 #${index + 1}
+                                ${hasKeyword ? '<span class="ms-2 badge bg-warning text-dark">包含关键词</span>' : ''}
+                            </button>
+                        </h2>
+                        <div id="${chunkId}" class="accordion-collapse collapse ${hasKeyword || index === 0 ? 'show' : ''}" 
+                             data-bs-parent="#chunksAccordion">
+                            <div class="accordion-body">
+                                <pre class="mb-0">${highlightedContent}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        // 否则显示完整内容
+        else if (data.content) {
+            let highlightedContent = data.content;
+            if (keywords && highlightedContent) {
+                // 使用正则表达式进行不区分大小写的替换，保留原始大小写
+                const regex = new RegExp(keywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                highlightedContent = highlightedContent.replace(regex, match => 
+                    `<mark class="bg-warning">${match}</mark>`
+                );
+                
+                // 添加搜索结果统计信息
+                const matches = (data.content.match(new RegExp(keywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')) || []).length;
+                
+                if (matches > 0) {
+                    html += `
+                        <div class="alert alert-info mb-3">
+                            <span>关键词 "${keywords}" 在文档中共出现 ${matches} 次</span>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="alert alert-warning mb-3">
+                            <span>未在文档中找到关键词 "${keywords}"</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            if (fileType === 'pdf') {
+                html += `
+                    <div class="alert alert-info">
+                        <p>PDF文件需要外部查看器。请使用RAGFlow原生界面或下载后查看。</p>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="card">
+                        <div class="card-header">文档内容</div>
+                        <div class="card-body">
+                            <pre class="mb-0" style="white-space: pre-wrap;">${highlightedContent}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        previewContent.innerHTML = html;
+        
+        // 如果有关键词且有匹配项，自动滚动到第一个匹配项
+        if (keywords) {
+            setTimeout(() => {
+                const firstMark = document.querySelector('mark');
+                if (firstMark) {
+                    firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+        }
+    }
+    
+    // 格式化文件大小
+    function formatFileSize(sizeInBytes) {
+        if (!sizeInBytes) return '未知';
+        
+        const KB = 1024;
+        const MB = KB * 1024;
+        const GB = MB * 1024;
+        
+        if (sizeInBytes < KB) {
+            return sizeInBytes + ' B';
+        } else if (sizeInBytes < MB) {
+            return (sizeInBytes / KB).toFixed(2) + ' KB';
+        } else if (sizeInBytes < GB) {
+            return (sizeInBytes / MB).toFixed(2) + ' MB';
+        } else {
+            return (sizeInBytes / GB).toFixed(2) + ' GB';
+        }
+    }
+    
+    // 删除文档功能
+    function deleteDocument(docId, docName) {
+        if (confirm(`确定要删除文档 "${docName}" 吗？此操作不可恢复！`)) {
+            const kbId = window.currentKbId;
+            
+            if (!kbId || !docId) {
+                alert('知识库ID或文档ID无效');
+                return;
+            }
+            
+            console.log(`删除文档: ${docName}, ID: ${docId}, 知识库ID: ${kbId}`);
+            
+            // 显示删除中状态
+            const docRow = document.querySelector(`tr[data-doc-id="${docId}"]`);
+            if (docRow) {
+                docRow.classList.add('table-warning');
+                docRow.querySelector('.doc-delete-btn').disabled = true;
+                docRow.querySelector('.doc-delete-btn').innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            }
+            
+            // 发送删除请求
+            fetch(`/api/knowledge_bases/${kbId}/documents/${docId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert(`删除失败: ${data.error}`);
+                    // 恢复行状态
+                    if (docRow) {
+                        docRow.classList.remove('table-warning');
+                        docRow.querySelector('.doc-delete-btn').disabled = false;
+                        docRow.querySelector('.doc-delete-btn').textContent = '删除';
+                    }
+                    return;
+                }
+                
+                // 删除成功，移除行
+                if (docRow) {
+                    docRow.remove();
+                }
+                
+                // 检查是否还有文档
+                if (document.querySelectorAll('#documentsList tr').length === 0) {
+                    document.getElementById('documentsList').innerHTML = '<tr><td colspan="5" class="text-center">暂无文档</td></tr>';
+                }
+                
+                // 显示成功消息
+                alert(`文档 "${docName}" 已成功删除`);
+                
+                // 刷新知识库列表
+                fetchKnowledgeBases();
+            })
+            .catch(error => {
+                console.error('删除文档失败:', error);
+                alert(`删除失败: ${error.message}`);
+                
+                // 恢复行状态
+                if (docRow) {
+                    docRow.classList.remove('table-warning');
+                    docRow.querySelector('.doc-delete-btn').disabled = false;
+                    docRow.querySelector('.doc-delete-btn').textContent = '删除';
+                }
+            });
+        }
+    }
+
+    // 下载文档功能
+    function downloadDocument(docId, docName) {
+        console.log(`下载文档: ${docName}, ID: ${docId}`);
+        
+        // 获取当前知识库ID
+        const kbId = window.currentKbId;
+        
+        if (!kbId || !docId) {
+            showToast('错误', '知识库ID或文档ID无效', 'danger');
+            return;
+        }
+        
+        // 显示下载中的提示
+        showToast('下载中', `正在准备下载文件: ${docName}`, 'info');
+        
+        // 构建下载URL
+        const downloadUrl = `/api/knowledge_bases/${kbId}/documents/${docId}/download`;
+        
+        try {
+            // 创建一个隐藏的a标签直接下载文件
+            const downloadLink = document.createElement('a');
+            downloadLink.href = downloadUrl;
+            downloadLink.download = docName || `document_${docId}`;
+            downloadLink.style.display = 'none';
+            document.body.appendChild(downloadLink);
+            
+            // 触发点击下载
+            downloadLink.click();
+            
+            // 显示成功消息
+            showToast('成功', `文件 "${docName}" 开始下载，请查看浏览器下载栏`, 'success');
+            
+            // 延迟移除下载链接
+            setTimeout(() => {
+                if (document.body.contains(downloadLink)) {
+                    document.body.removeChild(downloadLink);
+                }
+            }, 2000);
+        } catch (e) {
+            console.error('下载过程中出错:', e);
+            showToast('错误', '下载文件时出现错误，请重试', 'danger');
+        }
+    }
+    
+    // 通用Toast提示函数
+    function showToast(title, message, type = 'info') {
+        // 创建toast容器（如果不存在）
+        if (!document.getElementById('toastContainer')) {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '1050';
+            document.body.appendChild(container);
+        }
+        
+        // 生成唯一ID
+        const toastId = 'toast_' + Date.now();
+        
+        // 创建toast HTML
+        const toastHtml = `
+            <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-${type} text-white">
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        
+        // 添加到容器
+        document.getElementById('toastContainer').insertAdjacentHTML('beforeend', toastHtml);
+        
+        // 初始化并显示
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        toast.show();
+        
+        // 自动移除
+        toastElement.addEventListener('hidden.bs.toast', function () {
+            toastElement.remove();
+        });
+    }
+</script>
+{% endblock %} 
