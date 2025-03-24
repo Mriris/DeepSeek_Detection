@@ -1,2 +1,5 @@
 ollama
+requests
+dotenv
+python-dotenv
 flask
