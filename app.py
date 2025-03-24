@@ -1192,140 +1192,105 @@ def api_download_document(kb_id, doc_id):
         # 记录请求信息
         api_logger.info(f"文档下载请求 - 知识库ID: {kb_id}, 文档ID: {doc_id}")
         
-        # 先获取文档列表，从中找到匹配的文档名称
+        # 先获取文档名称
         filename = None
         try:
-            # 获取知识库的文档列表
             datasets = get_ragflow_kb_datasets(kb_id)
-            if isinstance(datasets, dict) and 'code' in datasets and datasets.get('code') == 0:
-                if 'data' in datasets and 'docs' in datasets['data']:
-                    # 在文档列表中查找匹配的文档
-                    for doc in datasets['data']['docs']:
-                        # 确保ID比较正确，将两者都转为字符串再比较
-                        doc_id_str = str(doc.get('id'))
-                        if doc_id_str == doc_id:
-                            filename = doc.get('name')
-                            api_logger.info(f"从文档列表中找到文件名: {filename}")
-                            break
+            if isinstance(datasets, dict) and datasets.get('code') == 0 and 'data' in datasets and 'docs' in datasets['data']:
+                for doc in datasets['data']['docs']:
+                    if str(doc.get('id')) == doc_id:
+                        filename = doc.get('name')
+                        api_logger.info(f"从文档列表找到文件名: {filename}")
+                        break
         except Exception as e:
-            api_logger.warning(f"从文档列表获取文件名失败: {str(e)}")
+            api_logger.warning(f"获取文件名失败: {str(e)}")
         
-        # 构建请求URL - 使用文档下载API
+        # 构建请求URL
         request_url = f"{RAGFLOW_API_URL}/api/v1/datasets/{kb_id}/documents/{doc_id}"
         api_logger.info(f"请求文档下载 - URL: {request_url}")
         
-        try:
-            # 发送请求获取文档内容
-            response = requests.get(
-                request_url,
-                headers=headers,
-                stream=True,  # 使用流式传输
-                timeout=30    # 增加超时时间，因为文档可能较大
+        # 发送请求获取文档内容
+        response = requests.get(
+            request_url,
+            headers=headers,
+            stream=True,
+            timeout=30
+        )
+        
+        # 检查响应状态
+        if response.status_code == 200:
+            api_logger.info(f"下载请求成功 - 状态码: {response.status_code}")
+            
+            # 如果未找到文件名，尝试从响应头获取
+            if not filename and 'Content-Disposition' in response.headers:
+                try:
+                    cd = response.headers['Content-Disposition']
+                    if '"' in cd:
+                        filename = cd.split('filename="')[1].split('"')[0]
+                    else:
+                        filename = cd.split('filename=')[1].split(';')[0].strip()
+                except Exception:
+                    pass
+            
+            # 如果仍然没有文件名，使用文档ID
+            if not filename:
+                filename = f"document_{doc_id}"
+            
+            # 检查内容类型，避免返回JSON错误
+            content_type = response.headers.get('Content-Type', '')
+            if 'application/json' in content_type.lower():
+                try:
+                    content_start = next(response.iter_content(chunk_size=1024))
+                    json.loads(content_start)  # 如果能解析为JSON，则是错误响应
+                    return jsonify({"error": "服务器返回了JSON而不是文件内容"}), 500
+                except (json.JSONDecodeError, StopIteration):
+                    pass
+            
+            # 创建响应
+            def generate():
+                if 'content_start' in locals() and content_start:
+                    yield content_start
+                for chunk in response.iter_content(chunk_size=4096):
+                    if chunk:
+                        yield chunk
+            
+            # 设置响应头
+            encoded_filename = requests.utils.quote(filename)
+            flask_response = Response(
+                generate(), 
+                content_type=response.headers.get('Content-Type', 'application/octet-stream')
             )
             
-            # 检查响应状态
-            if response.status_code == 200:
-                api_logger.info(f"文档下载请求成功 - 状态码: {response.status_code}")
-                
-                # 如果之前未找到文件名，尝试从响应中获取
-                if not filename:
-                    # 先从Content-Disposition头获取文件名
-                    if 'Content-Disposition' in response.headers:
-                        content_disposition = response.headers['Content-Disposition']
-                        if 'filename=' in content_disposition:
-                            try:
-                                # 处理引号和编码问题
-                                if '"' in content_disposition:
-                                    filename = content_disposition.split('filename="')[1].split('"')[0]
-                                else:
-                                    filename = content_disposition.split('filename=')[1].split(';')[0].strip()
-                                api_logger.info(f"从响应头获取到文件名: {filename}")
-                            except Exception as e:
-                                api_logger.warning(f"从Content-Disposition解析文件名失败: {str(e)}")
-                
-                # 如果仍然无法获取文件名，使用文档ID作为文件名
-                if not filename:
-                    filename = f"document_{doc_id}"
-                    api_logger.warning(f"无法获取文件名，使用文档ID作为文件名: {filename}")
-                
-                # 检查Content-Type是否为JSON（可能是API返回了错误而不是文件）
-                content_type = response.headers.get('Content-Type', '')
-                api_logger.info(f"下载响应的Content-Type: {content_type}")
-                
-                if 'application/json' in content_type.lower():
-                    try:
-                        # 仅读取一部分来判断是否为JSON错误
-                        content_start = next(response.iter_content(chunk_size=1024))
-                        try:
-                            error_data = json.loads(content_start)
-                            api_logger.error(f"API返回了JSON而不是文件: {error_data}")
-                            return jsonify({"error": "服务器返回了JSON而不是文件内容"}), 500
-                        except json.JSONDecodeError:
-                            # 如果不是有效的JSON，可能是二进制文件，继续处理
-                            api_logger.info("Content-Type声明为JSON但不是有效JSON，继续处理文件下载")
-                    except Exception as content_err:
-                        api_logger.error(f"检查内容类型时出错: {str(content_err)}")
-                
-                # 创建响应，使用Flask的响应对象来流式传输数据
-                def generate():
-                    try:
-                        # 如果之前已经读取了内容的开始部分，先返回它
-                        if 'content_start' in locals() and content_start:
-                            yield content_start
-                        
-                        # 然后继续读取剩余内容
-                        for chunk in response.iter_content(chunk_size=4096):
-                            if chunk:  # 过滤掉保持连接活跃的空块
-                                yield chunk
-                    except Exception as stream_err:
-                        api_logger.error(f"流式传输文件时出错: {str(stream_err)}")
-                
-                # 对文件名进行URL编码以处理特殊字符
-                encoded_filename = requests.utils.quote(filename)
-                
-                # 创建响应并设置适当的头信息
-                flask_response = Response(
-                    generate(), 
-                    content_type=response.headers.get('Content-Type', 'application/octet-stream')
-                )
-                
-                # 设置Content-Disposition头，确保文件名编码正确
-                if ',' in filename or ';' in filename or '"' in filename or "'" in filename:
-                    # 如果文件名包含特殊字符，使用引号并编码
-                    flask_response.headers['Content-Disposition'] = f'attachment; filename="{encoded_filename}"; filename*=UTF-8\'\'{encoded_filename}'
-                else:
-                    # 否则使用简单格式
-                    flask_response.headers['Content-Disposition'] = f'attachment; filename={encoded_filename}'
-                
-                # 添加其他有用的头信息
-                if 'Content-Length' in response.headers:
-                    flask_response.headers['Content-Length'] = response.headers['Content-Length']
-                
-                api_logger.info(f"开始文档下载 - 文件名: {filename}, 编码后: {encoded_filename}")
-                return flask_response
+            # 设置Content-Disposition头
+            if any(c in filename for c in ',;\'\"'):
+                flask_response.headers['Content-Disposition'] = f'attachment; filename="{encoded_filename}"; filename*=UTF-8\'\'{encoded_filename}'
             else:
-                # 捕获常见错误响应
-                error_msg = f"文档下载失败: 状态码 {response.status_code}"
-                try:
-                    if response.headers.get('Content-Type', '').startswith('application/json'):
-                        error_json = response.json()
-                        if isinstance(error_json, dict) and 'error' in error_json:
-                            error_msg = f"文档下载失败: {error_json['error']}"
-                    else:
-                        error_msg = f"文档下载失败: {response.text[:200]}"
-                except Exception:
-                    pass  # 保持原始错误消息
-                
-                api_logger.error(error_msg)
-                return jsonify({"error": error_msg}), response.status_code
-                
-        except requests.exceptions.RequestException as req_err:
-            error_msg = f"发送下载请求失败: {str(req_err)}"
-            api_logger.error(error_msg)
-            return jsonify({"error": error_msg}), 500
+                flask_response.headers['Content-Disposition'] = f'attachment; filename={encoded_filename}'
             
+            # 复制Content-Length头
+            if 'Content-Length' in response.headers:
+                flask_response.headers['Content-Length'] = response.headers['Content-Length']
+            
+            return flask_response
+        else:
+            error_msg = f"文档下载失败: 状态码 {response.status_code}"
+            if response.headers.get('Content-Type', '').startswith('application/json'):
+                try:
+                    error_json = response.json()
+                    if 'error' in error_json:
+                        error_msg = f"下载失败: {error_json['error']}"
+                except:
+                    pass
+            
+            api_logger.error(error_msg)
+            return jsonify({"error": error_msg}), response.status_code
+            
+    except requests.exceptions.RequestException as req_err:
+        error_msg = f"下载请求失败: {str(req_err)}"
+        api_logger.error(error_msg)
+        return jsonify({"error": error_msg}), 500
     except Exception as e:
-        error_msg = f"文档下载请求处理出错: {str(e)}"
+        error_msg = f"下载处理出错: {str(e)}"
         api_logger.error(error_msg)
         return jsonify({"error": error_msg}), 500
 

@@ -1313,8 +1313,6 @@
 
     // 下载文档功能
     function downloadDocument(docId, docName) {
-        console.log(`下载文档: ${docName}, ID: ${docId}`);
-        
         // 获取当前知识库ID
         const kbId = window.currentKbId;
         
@@ -1323,36 +1321,27 @@
             return;
         }
         
-        // 显示下载中的提示
-        showToast('下载中', `正在准备下载文件: ${docName}`, 'info');
+        // 显示下载提示
+        showToast('下载中', `正在下载文件: ${docName}`, 'info');
         
-        // 构建下载URL
+        // 构建下载URL并直接下载
         const downloadUrl = `/api/knowledge_bases/${kbId}/documents/${docId}/download`;
+        const downloadLink = document.createElement('a');
+        downloadLink.href = downloadUrl;
+        downloadLink.download = docName || `document_${docId}`;
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
         
+        // 触发下载并清理
         try {
-            // 创建一个隐藏的a标签直接下载文件
-            const downloadLink = document.createElement('a');
-            downloadLink.href = downloadUrl;
-            downloadLink.download = docName || `document_${docId}`;
-            downloadLink.style.display = 'none';
-            document.body.appendChild(downloadLink);
-            
-            // 触发点击下载
             downloadLink.click();
-            
-            // 显示成功消息
-            showToast('成功', `文件 "${docName}" 开始下载，请查看浏览器下载栏`, 'success');
-            
-            // 延迟移除下载链接
-            setTimeout(() => {
-                if (document.body.contains(downloadLink)) {
-                    document.body.removeChild(downloadLink);
-                }
-            }, 2000);
+            showToast('成功', `文件下载已开始`, 'success');
         } catch (e) {
-            console.error('下载过程中出错:', e);
-            showToast('错误', '下载文件时出现错误，请重试', 'danger');
+            showToast('错误', '下载失败，请重试', 'danger');
         }
+        
+        // 延迟移除下载链接
+        setTimeout(() => document.body.removeChild(downloadLink), 1000);
     }
     
     // 通用Toast提示函数
