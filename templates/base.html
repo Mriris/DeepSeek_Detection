@@ -68,6 +68,7 @@
         <ul>
             <li><a href="/detective"><i class="bi bi-search"></i> 漏洞检测</a></li>
             <li><a href="/model_training"><i class="bi bi-gpu-card"></i> 模型训练</a></li>
+            <li><a href="/knowledge_base"><i class="bi bi-journal-text"></i> 本地知识库</a></li>
             <li><a href="/vulnerability_management"><i class="bi bi-shield-exclamation"></i> 漏洞信息管理</a></li>
         </ul>
     </div>
@@ -271,7 +272,7 @@
         const currentPath = window.location.pathname;
         
         // 需要显示左侧侧边栏的页面列表
-        const sidebarPages = ['/detective', '/model_training', '/vulnerability_management'];
+        const sidebarPages = ['/detective', '/model_training', '/vulnerability_management', '/knowledge_base'];
         
         // 如果当前页面在列表中，显示左侧侧边栏
         if (sidebarPages.includes(currentPath)) {

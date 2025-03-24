@@ -6,6 +6,7 @@ import sys
 from flask import Flask, render_template, request, jsonify
 import ollama
 import json
+import requests  # 添加requests库用于调用RAGFlow API
 
 from process_vulfi import read_vulfi_file, read_extracted_functions, extract_vulfi_data, save_to_json
 
@@ -25,6 +26,16 @@ EXTRACT_FEATURES_SCRIPT_PATH = os.path.join(PROJECT_PATH, 'IDA', 'extract_featur
 VULFI_SCRIPT_PATH = os.path.join(PROJECT_PATH, 'IDA', 'VulFi.py')
 IDA_EXECUTABLE = os.path.join(IDA_PATH, 'ida.exe')
 PLUGINS_FOLDER = os.path.join(IDA_PATH, 'plugins')
+
+# RAGFlow API配置
+RAGFLOW_API_URL = "http://127.0.0.1"  # 使用本地主机地址，端口80是默认的，不需要指定
+# RAGFlow API Key
+RAGFLOW_API_KEY = "ragflow-AzNjBkMzMyZWVkOTExZWY5MjM2MDI0Mm"
+# 如果上面的API路径无效，可以尝试以下替代路径之一
+RAGFLOW_API_ALTERNATIVES = [
+    "http://localhost",
+    "http://127.0.0.1:9380"
+]
 
 ALLOWED_EXTENSIONS = {'bin', 'exe', 'elf'}
 
@@ -240,6 +251,11 @@ def model_training():
     return render_template('model_training.html')
 
 
+@app.route('/knowledge_base')
+def knowledge_base():
+    return render_template('knowledge_base.html')
+
+
 @app.route('/vulnerability_management')
 def vulnerability_management():
     return render_template('vulnerability_management.html')
@@ -352,6 +368,313 @@ def analyze_vulnerability(address):
         print(f"分析过程中出错: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+# RAGFlow API工具函数
+def get_ragflow_knowledge_bases():
+    """获取RAGFlow所有知识库"""
+    try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+        response = requests.get(f"{RAGFLOW_API_URL}/api/v1/datasets", headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            print(f"获取知识库列表 - 原始响应: {data}")
+            
+            # 检查各种可能的响应格式
+            if isinstance(data, list):
+                # 直接返回知识库列表
+                return data
+            elif isinstance(data, dict):
+                # 可能是包含数据的响应对象
+                if "data" in data and isinstance(data["data"], list):
+                    return data["data"]
+                elif "result" in data and isinstance(data["result"], list):
+                    return data["result"] 
+                elif "code" in data and data["code"] == 0 and "data" in data:
+                    # RAGFlow标准格式
+                    return data["data"]
+                elif "code" in data and data["code"] == 100:
+                    # 特殊情况，可能是一种API格式需要特殊处理
+                    # 对于这种情况，我们返回空列表并记录
+                    print(f"特殊API响应格式: {data}")
+                    return []
+                else:
+                    print(f"未知的知识库响应格式: {data}")
+                    return {"error": f"未知的知识库响应格式: {data}"}
+            else:
+                print(f"不支持的响应类型: {type(data)}")
+                return {"error": f"不支持的响应类型: {type(data)}"}
+        else:
+            print(f"获取知识库列表失败: {response.status_code}, 响应: {response.text}")
+            return {"error": f"获取知识库列表失败: {response.status_code}, 响应: {response.text}"}
+    except Exception as e:
+        print(f"连接RAGFlow API出错: {str(e)}")
+        return {"error": f"连接RAGFlow API出错: {str(e)}"}
+
+def get_ragflow_kb_datasets(kb_id):
+    """获取指定知识库的所有数据集"""
+    try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+        response = requests.get(f"{RAGFLOW_API_URL}/api/v1/datasets/{kb_id}/files", headers=headers, timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"获取知识库数据集失败: {response.status_code}, 响应: {response.text}")
+            return {"error": f"获取知识库数据集失败: {response.status_code}, 响应: {response.text}"}
+    except Exception as e:
+        print(f"连接RAGFlow API出错: {str(e)}")
+        return {"error": f"连接RAGFlow API出错: {str(e)}"}
+
+def create_ragflow_kb(name, description=""):
+    """创建新的知识库"""
+    try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+        data = {
+            "name": name,
+            "description": description
+        }
+        response = requests.post(f"{RAGFLOW_API_URL}/api/v1/datasets", json=data, headers=headers, timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"创建知识库失败: {response.status_code}, 响应: {response.text}")
+            return {"error": f"创建知识库失败: {response.status_code}, 响应: {response.text}"}
+    except Exception as e:
+        print(f"连接RAGFlow API出错: {str(e)}")
+        return {"error": f"连接RAGFlow API出错: {str(e)}"}
+
+def query_ragflow_kb(kb_id, query_text):
+    """对知识库执行查询"""
+    try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+        data = {
+            "query": query_text,
+            "top_k": 3
+        }
+        response = requests.post(f"{RAGFLOW_API_URL}/api/v1/datasets/{kb_id}/search", json=data, headers=headers, timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"知识库查询失败: {response.status_code}, 响应: {response.text}")
+            return {"error": f"知识库查询失败: {response.status_code}, 响应: {response.text}"}
+    except Exception as e:
+        print(f"连接RAGFlow API出错: {str(e)}")
+        return {"error": f"连接RAGFlow API出错: {str(e)}"}
+
+# 知识库相关API路由
+@app.route('/api/knowledge_bases', methods=['GET'])
+def api_get_knowledge_bases():
+    """获取所有知识库列表的API"""
+    kbs = get_ragflow_knowledge_bases()
+    return jsonify(kbs)
+
+@app.route('/api/knowledge_bases/<kb_id>/datasets', methods=['GET'])
+def api_get_kb_datasets(kb_id):
+    """获取知识库数据集的API"""
+    datasets = get_ragflow_kb_datasets(kb_id)
+    return jsonify(datasets)
+
+@app.route('/api/knowledge_bases/create', methods=['POST'])
+def api_create_knowledge_base():
+    """创建新知识库的API"""
+    data = request.get_json()
+    name = data.get('name')
+    description = data.get('description', '')
+    if not name:
+        return jsonify({"error": "知识库名称不能为空"}), 400
+    result = create_ragflow_kb(name, description)
+    return jsonify(result)
+
+@app.route('/api/knowledge_bases/<kb_id>/query', methods=['POST'])
+def api_query_knowledge_base(kb_id):
+    """查询知识库的API"""
+    data = request.get_json()
+    query = data.get('query')
+    if not query:
+        return jsonify({"error": "查询内容不能为空"}), 400
+    result = query_ragflow_kb(kb_id, query)
+    return jsonify(result)
+
+@app.route('/api/ragflow/test_all_paths', methods=['GET'])
+def test_all_ragflow_paths():
+    """尝试所有可能的RAGFlow API路径"""
+    results = {}
+    headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+    
+    # 先测试默认路径
+    try:
+        response = requests.get(f"{RAGFLOW_API_URL}/api/v1/datasets", headers=headers, timeout=3)
+        results["default"] = {
+            "url": f"{RAGFLOW_API_URL}/api/v1/datasets",
+            "status_code": response.status_code,
+            "success": response.status_code == 200,
+            "content_type": response.headers.get('Content-Type'),
+            "response": response.json() if response.status_code == 200 else None
+        }
+    except Exception as e:
+        results["default"] = {
+            "url": f"{RAGFLOW_API_URL}/api/v1/datasets",
+            "error": str(e),
+            "success": False
+        }
+    
+    # 测试替代路径
+    for i, api_url in enumerate(RAGFLOW_API_ALTERNATIVES):
+        try:
+            response = requests.get(f"{api_url}/api/v1/datasets", headers=headers, timeout=3)
+            results[f"alt_{i}"] = {
+                "url": f"{api_url}/api/v1/datasets",
+                "status_code": response.status_code,
+                "success": response.status_code == 200,
+                "content_type": response.headers.get('Content-Type'),
+                "response": response.json() if response.status_code == 200 else None
+            }
+        except Exception as e:
+            results[f"alt_{i}"] = {
+                "url": f"{api_url}/api/v1/datasets",
+                "error": str(e),
+                "success": False
+            }
+    
+    return jsonify(results)
+
+@app.route('/api/ragflow/debug_kb', methods=['GET'])
+def debug_ragflow_kb():
+    """调试用：获取RAGFlow知识库API的原始响应"""
+    try:
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+        print(f"调试RAGFlow连接 - API URL: {RAGFLOW_API_URL}/api/v1/datasets")
+        print(f"调试RAGFlow连接 - Headers: {headers}")
+        response = requests.get(f"{RAGFLOW_API_URL}/api/v1/datasets", headers=headers, timeout=5)
+        print(f"调试RAGFlow连接 - 状态码: {response.status_code}")
+        print(f"调试RAGFlow连接 - 响应头: {response.headers}")
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            print(f"调试RAGFlow连接 - 响应内容: {response_data}")
+            return jsonify({
+                "success": True,
+                "raw_response": response_data,
+                "content_type": response.headers.get('Content-Type'),
+                "headers_sent": headers,
+                "api_key_used": RAGFLOW_API_KEY[:10] + "..." # 只显示部分API key以保护安全
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "status_code": response.status_code,
+                "reason": response.reason,
+                "content": response.text
+            })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
+
+@app.route('/api/ragflow/test_connection', methods=['GET'])
+def test_ragflow_connection():
+    """测试RAGFlow连接状态"""
+    try:
+        # 尝试获取知识库列表作为连接测试
+        headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+        
+        # 首先尝试不带路径直接访问
+        print(f"测试RAGFlow连接 - 使用基础URL: {RAGFLOW_API_URL}")
+        print(f"测试RAGFlow连接 - 使用头信息: {headers}")
+        
+        # 直接测试正确的API路径
+        response = requests.get(f"{RAGFLOW_API_URL}/api/v1/datasets", headers=headers, timeout=5)
+        content_type = response.headers.get('Content-Type', '')
+        
+        print(f"测试RAGFlow连接 - 状态码: {response.status_code}")
+        print(f"测试RAGFlow连接 - 内容类型: {content_type}")
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                print(f"测试RAGFlow连接 - 响应内容: {data}")
+                
+                return jsonify({
+                    "success": True,
+                    "message": "成功连接到RAGFlow服务",
+                    "status": data
+                })
+            except:
+                return jsonify({
+                    "success": True,
+                    "message": "成功连接到RAGFlow服务，但响应不是JSON格式",
+                    "content_type": content_type,
+                    "status": response.text[:100]
+                })
+        else:
+            return jsonify({
+                "success": False,
+                "message": f"RAGFlow服务返回错误: {response.status_code}",
+                "content_type": content_type,
+                "status": None
+            })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"无法连接到RAGFlow服务: {str(e)}",
+            "status": None
+        })
+
+@app.route('/api/ragflow/detect_api_format', methods=['GET'])
+def detect_api_format():
+    """自动检测RAGFlow API的正确格式"""
+    results = {}
+    headers = {"Authorization": f"Bearer {RAGFLOW_API_KEY}"}
+    
+    # 尝试多种不同的路径格式组合
+    api_formats = [
+        # 根据Postman测试结果，这是正确的基础URL格式
+        {"base": "http://127.0.0.1", "kb_path": "/api/v1/datasets"},
+        {"base": "http://localhost", "kb_path": "/api/v1/datasets"},
+        {"base": "http://127.0.0.1:9380", "kb_path": "/api/v1/datasets"},
+        {"base": "http://localhost:9380", "kb_path": "/api/v1/datasets"},
+        # 尝试旧的kb路径作为对比
+        {"base": "http://127.0.0.1", "kb_path": "/api/v1/kb"},
+        {"base": "http://localhost:9380", "kb_path": "/api/v1/kb"}
+    ]
+    
+    for i, format_info in enumerate(api_formats):
+        base = format_info["base"]
+        kb_path = format_info["kb_path"]
+        full_url = f"{base}{kb_path}"
+        
+        try:
+            response = requests.get(full_url, headers=headers, timeout=3)
+            results[f"format_{i}"] = {
+                "base_url": base,
+                "kb_path": kb_path,
+                "full_url": full_url,
+                "status_code": response.status_code,
+                "success": response.status_code == 200,
+                "content_type": response.headers.get('Content-Type', ''),
+                "response": response.json() if response.status_code == 200 else None
+            }
+        except Exception as e:
+            results[f"format_{i}"] = {
+                "base_url": base,
+                "kb_path": kb_path,
+                "full_url": full_url,
+                "error": str(e),
+                "success": False
+            }
+    
+    # 检查是否有成功的路径
+    successful_formats = [f for f in results.values() if f.get("success", False)]
+    if successful_formats:
+        recommended = successful_formats[0]
+        results["recommendation"] = {
+            "base_url": recommended["base_url"],
+            "kb_path": recommended["kb_path"],
+            "full_url": recommended["full_url"],
+            "message": "建议使用此API格式"
+        }
+    
+    return jsonify(results)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
