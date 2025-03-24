@@ -235,6 +235,16 @@ def portfolio_details():
     return render_template('detective.html')
 
 
+@app.route('/model_training')
+def model_training():
+    return render_template('model_training.html')
+
+
+@app.route('/vulnerability_management')
+def vulnerability_management():
+    return render_template('vulnerability_management.html')
+
+
 @app.route('/project-details')
 def service_details():
     return render_template('project-details.html')

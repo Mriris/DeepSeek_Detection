@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<meta charset="utf-8">
+<title>模型训练</title>
+<section id="hero" class="hero section light-background" style="background-color: #d3e7fb">
+    <div class="container">
+        <div class="row gy-4">
+            <div class="col-md-12 mb-4">
+                <h2><strong>模型训练平台</strong></h2>
+                <p>通过这个平台，您可以训练和管理用于漏洞检测的深度学习模型。</p>
+            </div>
+            
+            <!-- 左侧区域 - 训练模型 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4>训练新模型</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="modelTrainingForm">
+                            <div class="mb-3">
+                                <label for="modelName" class="form-label">模型名称</label>
+                                <input type="text" class="form-control" id="modelName" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="baseModel" class="form-label">基础模型</label>
+                                <select class="form-select" id="baseModel" required>
+                                    <option value="deepseek-r1:14b">DeepSeek-14B</option>
+                                    <option value="deepseek-coder:7b">DeepSeek-Coder-7B</option>
+                                    <option value="llama3:8b">Llama3-8B</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="trainingData" class="form-label">训练数据</label>
+                                <input type="file" class="form-control" id="trainingData" accept=".json,.csv">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="epochs" class="form-label">训练轮数</label>
+                                <input type="number" class="form-control" id="epochs" min="1" max="20" value="3">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="learningRate" class="form-label">学习率</label>
+                                <input type="number" class="form-control" id="learningRate" step="0.0001" min="0.0001" max="0.01" value="0.0002">
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary w-100" onclick="startTraining()">开始训练</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧区域 - 模型列表 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>已训练模型</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>模型名称</th>
+                                    <th>基础模型</th>
+                                    <th>创建日期</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modelsList">
+                                <tr>
+                                    <td>漏洞检测模型v1</td>
+                                    <td>DeepSeek-14B</td>
+                                    <td>2024-03-20</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">使用</button>
+                                        <button class="btn btn-sm btn-danger">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>漏洞检测模型v2</td>
+                                    <td>DeepSeek-Coder-7B</td>
+                                    <td>2024-03-22</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">使用</button>
+                                        <button class="btn btn-sm btn-danger">删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 训练进度 -->
+                <div class="card mt-4" id="trainingProgressCard" style="display: none;">
+                    <div class="card-header bg-info text-white">
+                        <h4>训练进度</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="trainingProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="trainingStatus">等待训练...</div>
+                        <div id="trainingLogs" class="mt-3 p-2 bg-light" style="max-height: 200px; overflow-y: auto; font-family: monospace;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function startTraining() {
+        // 获取表单数据
+        const modelName = document.getElementById('modelName').value;
+        const baseModel = document.getElementById('baseModel').value;
+        const epochs = document.getElementById('epochs').value;
+        
+        // 表单验证
+        if (!modelName) {
+            alert('请输入模型名称');
+            return;
+        }
+        
+        // 显示训练进度卡片
+        document.getElementById('trainingProgressCard').style.display = 'block';
+        document.getElementById('trainingProgress').style.width = '0%';
+        document.getElementById('trainingStatus').textContent = '准备训练...';
+        document.getElementById('trainingLogs').innerHTML = '> 初始化训练环境...\n';
+        
+        // 模拟训练进度
+        let progress = 0;
+        const trainingInterval = setInterval(() => {
+            progress += 5;
+            if (progress > 100) {
+                clearInterval(trainingInterval);
+                document.getElementById('trainingStatus').textContent = '训练完成!';
+                document.getElementById('trainingLogs').innerHTML += '> 训练完成! 模型已保存。\n';
+                
+                // 添加新模型到列表
+                const today = new Date().toISOString().slice(0, 10);
+                const newRow = `
+                    <tr>
+                        <td>${modelName}</td>
+                        <td>${baseModel}</td>
+                        <td>${today}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">使用</button>
+                            <button class="btn btn-sm btn-danger">删除</button>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('modelsList').innerHTML += newRow;
+                
+                return;
+            }
+            
+            document.getElementById('trainingProgress').style.width = `${progress}%`;
+            document.getElementById('trainingStatus').textContent = `训练中... ${progress}%`;
+            
+            // 添加一些模拟的训练日志
+            if (progress % 20 === 0) {
+                document.getElementById('trainingLogs').innerHTML += `> 训练第 ${progress/20} 轮, 损失值: ${(5 - progress/25).toFixed(4)}\n`;
+                document.getElementById('trainingLogs').scrollTop = document.getElementById('trainingLogs').scrollHeight;
+            }
+        }, 500);
+    }
+</script>
+{% endblock %} 
