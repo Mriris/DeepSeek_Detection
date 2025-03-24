@@ -29,6 +29,13 @@ VULFI_SCRIPT_PATH = os.path.join(PROJECT_PATH, 'IDA', 'VulFi.py')
 IDA_EXECUTABLE = os.path.join(IDA_PATH, 'ida.exe')
 PLUGINS_FOLDER = os.path.join(IDA_PATH, 'plugins')
 
+# 训练模型存储路径
+TRAINED_MODELS_FILE = os.path.join(PROJECT_PATH, 'trained_models.json')
+
+# Ollama API配置
+OLLAMA_API_URL = "http://localhost:11434"
+DEFAULT_MODEL = "deepseek-r1:14b"
+
 # RAGFlow API配置
 RAGFLOW_API_URL = "http://127.0.0.1"  # 使用本地主机地址，端口80是默认的，不需要指定
 # RAGFlow API Key
@@ -77,8 +84,85 @@ def allowed_file(filename):
     return False
 
 
+# 获取Ollama可用模型列表
+def get_ollama_models():
+    try:
+        response = requests.get(f"{OLLAMA_API_URL}/api/tags")
+        if response.status_code == 200:
+            models = response.json().get('models', [])
+            return models
+        else:
+            return []
+    except Exception as e:
+        print(f"获取模型列表时出错: {str(e)}")
+        return []
+
+
+# 获取已训练的模型列表
+def get_trained_models():
+    if not os.path.exists(TRAINED_MODELS_FILE):
+        return []
+    
+    try:
+        with open(TRAINED_MODELS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"读取训练模型列表时出错: {str(e)}")
+        return []
+
+
+# 保存训练模型信息
+def save_trained_model(model_info):
+    try:
+        models = get_trained_models()
+        models.append(model_info)
+        
+        with open(TRAINED_MODELS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(models, f, ensure_ascii=False, indent=2)
+        
+        return True
+    except Exception as e:
+        print(f"保存训练模型信息时出错: {str(e)}")
+        return False
+
+
+# 获取所有可用模型（包括基础模型和训练好的模型）
+def get_all_available_models():
+    base_models = get_ollama_models()
+    trained_models = get_trained_models()
+    
+    # 创建基础模型列表（添加类型标识）
+    base_model_list = [
+        {
+            "name": model["name"],
+            "type": "base",
+            "details": model.get("details", {}),
+            "size": model.get("size", 0)
+        }
+        for model in base_models
+    ]
+    
+    # 创建训练模型列表（添加类型标识）
+    trained_model_list = [
+        {
+            "name": model["model_name"],
+            "type": "trained",
+            "base_model": model["base_model"],
+            "created_at": model["created_at"],
+            "id": model.get("id", "")
+        }
+        for model in trained_models
+    ]
+    
+    # 合并两个列表
+    return base_model_list + trained_model_list
+
+
 # 加载 DeepSeek 模型并获取漏洞检测结果
-def load_model(features_file):
+def load_model(features_file, model_name=None):
+    if not model_name:
+        model_name = DEFAULT_MODEL
+        
     with open(features_file, 'r') as f:
         features = json.load(f)
 
@@ -103,7 +187,8 @@ def load_model(features_file):
 
     message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
 
-    response = ollama.chat(model='deepseek-r1:14b', messages=[{'role': 'user', 'content': message_content}])
+    print(f"使用模型: {model_name} 进行分析")
+    response = ollama.chat(model=model_name, messages=[{'role': 'user', 'content': message_content}])
 
     if 'message' in response:
         return response['message']['content']
@@ -245,12 +330,15 @@ def houtai():
 
 @app.route('/detective')
 def portfolio_details():
-    return render_template('detective.html')
+    models = get_all_available_models()
+    return render_template('detective.html', models=models)
 
 
 @app.route('/model_training')
 def model_training():
-    return render_template('model_training.html')
+    models = get_ollama_models()
+    trained_models = get_trained_models()
+    return render_template('model_training.html', models=models, trained_models=trained_models)
 
 
 @app.route('/knowledge_base')
@@ -273,9 +361,12 @@ def detect():
     try:
         # 获取上传的文件
         file = request.files['bin_file']
+        # 获取用户选择的模型
+        model_name = request.form.get('model_name', DEFAULT_MODEL)
 
         # 调试：输出文件的名称和扩展名
         print(f"上传的文件名是: {file.filename}")
+        print(f"选择的模型是: {model_name}")
 
         if file and allowed_file(file.filename):
             # 保存文件并获取新路径
@@ -289,15 +380,6 @@ def detect():
             if result_1.stderr:
                 print("IDA 执行错误:", result_1.stderr.decode())
                 return jsonify({'error': 'IDA 执行失败'}), 500
-
-            # # 执行第二个 IDA 命令运行 VulFi 脚本
-            # ida_command_2 = f'"{IDA_EXECUTABLE}" -A -S"{VULFI_SCRIPT_PATH}" "{file_path}"'
-            # print("执行的 IDA 命令2是:", ida_command_2)  # 输出执行的 IDA 命令
-            # result_2 = subprocess.run(ida_command_2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #
-            # if result_2.stderr:
-            #     print("IDA 执行错误:", result_2.stderr.decode())
-            #     return jsonify({'error': 'IDA 执行失败'}), 500
 
             # 获取并处理 VulFi 数据
             vulfi_data = read_vulfi_file(VULFI_FILE_PATH)
@@ -317,7 +399,7 @@ def detect():
             if os.path.exists(VULFI_FILE_PATH):
                 csv_content = read_csv_to_array(VULFI_FILE_PATH)
 
-            return jsonify({'result': extracted_data, 'csv': csv_content})
+            return jsonify({'result': extracted_data, 'csv': csv_content, 'model_name': model_name})
 
         return jsonify({'error': '文件类型不支持'}), 400
 
@@ -329,6 +411,18 @@ def detect():
 @app.route('/analyze/<address>', methods=['GET'])
 def analyze_vulnerability(address):
     try:
+        # 获取用户选择的模型
+        model_name = request.args.get('model_name', DEFAULT_MODEL)
+        
+        # 如果选择的是训练模型，找到对应的基础模型
+        if ':' not in model_name:  # 训练模型通常没有冒号
+            trained_models = get_trained_models()
+            for trained_model in trained_models:
+                if trained_model["model_name"] == model_name:
+                    model_name = trained_model["base_model"]
+                    print(f"使用训练模型 {trained_model['model_name']} 的基础模型: {model_name}")
+                    break
+        
         # 加载 feature 数据
         features = load_features()
 
@@ -353,12 +447,12 @@ def analyze_vulnerability(address):
         previous_instructions = [instr['instruction'] for instr in previous_instructions]
         next_instructions = [instr['instruction'] for instr in next_instructions]
         message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
-        # message_content = f"你好"
 
         print(f"生成的消息内容: {message_content}")  # 输出生成的消息内容
+        print(f"使用模型: {model_name} 进行分析")
 
         # 调用模型进行分析
-        response = ollama.chat(model='deepseek-r1:14b', messages=[{'role': 'user', 'content': message_content}])
+        response = ollama.chat(model=model_name, messages=[{'role': 'user', 'content': message_content}])
 
         if 'message' in response:
             result_content = response['message']['content']
@@ -1293,6 +1387,72 @@ def api_download_document(kb_id, doc_id):
         error_msg = f"下载处理出错: {str(e)}"
         api_logger.error(error_msg)
         return jsonify({"error": error_msg}), 500
+
+# 获取可用的Ollama模型列表
+@app.route('/api/ollama/models', methods=['GET'])
+def api_get_ollama_models():
+    try:
+        include_trained = request.args.get('include_trained', 'false').lower() == 'true'
+        
+        if include_trained:
+            models = get_all_available_models()
+        else:
+            models = get_ollama_models()
+            
+        return jsonify({'models': models})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 保存训练模型信息
+@app.route('/api/models/trained', methods=['POST'])
+def api_save_trained_model():
+    try:
+        data = request.get_json()
+        if not data or 'model_name' not in data or 'base_model' not in data:
+            return jsonify({'error': '缺少必要的模型信息'}), 400
+        
+        # 确保有创建日期
+        if 'created_at' not in data:
+            from datetime import datetime
+            data['created_at'] = datetime.now().strftime('%Y-%m-%d')
+        
+        # 添加唯一ID
+        import uuid
+        data['id'] = str(uuid.uuid4())
+        
+        success = save_trained_model(data)
+        if success:
+            return jsonify({'success': True, 'message': '模型信息保存成功', 'model': data})
+        else:
+            return jsonify({'error': '保存模型信息失败'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 获取已训练模型列表
+@app.route('/api/models/trained', methods=['GET'])
+def api_get_trained_models():
+    try:
+        models = get_trained_models()
+        return jsonify({'models': models})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 删除训练模型
+@app.route('/api/models/trained/<model_id>', methods=['DELETE'])
+def api_delete_trained_model(model_id):
+    try:
+        models = get_trained_models()
+        filtered_models = [model for model in models if model.get('id') != model_id]
+        
+        if len(filtered_models) == len(models):
+            return jsonify({'error': '未找到指定模型'}), 404
+        
+        with open(TRAINED_MODELS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(filtered_models, f, ensure_ascii=False, indent=2)
+        
+        return jsonify({'success': True, 'message': '模型删除成功'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

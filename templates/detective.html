@@ -22,6 +22,38 @@
                         <input type="file" name="bin_file" id="bin-upload" accept=".bin, .exe, .elf"
                                class="form-control w-50">
                     </div>
+                    
+                    <!-- 添加模型选择下拉菜单 -->
+                    <div class="form-group w-100 mt-2">
+                        <label for="model-select" class="form-label">选择分析模型:</label>
+                        <div class="d-flex">
+                            <select name="model_name" id="model-select" class="form-select me-2">
+                                {% if models %}
+                                    <optgroup label="已训练模型">
+                                    {% for model in models %}
+                                        {% if model.type == 'trained' %}
+                                        <option value="{{ model.name }}">{{ model.name }} (基于 {{ model.base_model }})</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </optgroup>
+                                    
+                                    <optgroup label="基础模型">
+                                    {% for model in models %}
+                                        {% if model.type == 'base' %}
+                                        <option value="{{ model.name }}">{{ model.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </optgroup>
+                                {% else %}
+                                    <option value="deepseek-r1:14b">deepseek-r1:14b</option>
+                                {% endif %}
+                            </select>
+                            <button type="button" id="refresh-models-btn" class="btn btn-outline-primary" 
+                                    onclick="refreshModelsList()" title="刷新模型列表">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
                 </form>
                 <!-- 按钮 -->
                 <div class="d-flex mt-3">
@@ -59,6 +91,72 @@
     let currentStep = 'select';
     let resultData = [];  // 用于保存检测结果数据
     let dangerLevelData = []; // 用于保存危险程度数据
+    
+    // 刷新模型列表
+    function refreshModelsList() {
+        const refreshBtn = document.getElementById('refresh-models-btn');
+        const modelSelect = document.getElementById('model-select');
+        
+        // 添加加载动画
+        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        refreshBtn.disabled = true;
+        
+        fetch('/api/ollama/models?include_trained=true')
+            .then(response => response.json())
+            .then(data => {
+                if (data.models && Array.isArray(data.models)) {
+                    // 清空现有选项
+                    modelSelect.innerHTML = '';
+                    
+                    // 分组添加选项
+                    const trainedModels = data.models.filter(model => model.type === 'trained');
+                    const baseModels = data.models.filter(model => model.type === 'base');
+                    
+                    // 添加训练模型组
+                    if (trainedModels.length > 0) {
+                        const trainedGroup = document.createElement('optgroup');
+                        trainedGroup.label = '已训练模型';
+                        
+                        trainedModels.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model.name;
+                            option.textContent = `${model.name} (基于 ${model.base_model})`;
+                            trainedGroup.appendChild(option);
+                        });
+                        
+                        modelSelect.appendChild(trainedGroup);
+                    }
+                    
+                    // 添加基础模型组
+                    if (baseModels.length > 0) {
+                        const baseGroup = document.createElement('optgroup');
+                        baseGroup.label = '基础模型';
+                        
+                        baseModels.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model.name;
+                            option.textContent = model.name;
+                            baseGroup.appendChild(option);
+                        });
+                        
+                        modelSelect.appendChild(baseGroup);
+                    }
+                    
+                    console.log(`已更新模型列表，共 ${data.models.length} 个模型`);
+                } else {
+                    console.error('获取模型列表失败');
+                }
+            })
+            .catch(error => {
+                console.error('刷新模型列表时出错:', error);
+                alert('刷新模型列表失败，请稍后再试');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                refreshBtn.disabled = false;
+            });
+    }
 
     document.getElementById('action-btn').addEventListener('click', function (event) {
         event.preventDefault();
@@ -80,6 +178,11 @@
     // 启动检测
     function startDetection() {
         const formData = new FormData(document.getElementById('detect-form'));
+        
+        // 记录选择的模型
+        const modelSelect = document.getElementById('model-select');
+        const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
+        console.log("选择使用模型:", selectedModel);
 
         // 显示加载动画
         document.getElementById('loading-animation').style.display = 'block';
@@ -127,8 +230,13 @@
 
     function analyzeVulnerability(address) {
         console.log("开始分析漏洞:", address);
+        
+        // 获取选择的模型
+        const modelSelect = document.getElementById('model-select');
+        const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
+        console.log("使用模型:", selectedModel);
 
-        fetch(`/analyze/${address}`, {
+        fetch(`/analyze/${address}?model_name=${selectedModel}`, {
             method: 'GET'
         })
             .then(response => {
@@ -335,6 +443,40 @@
     function resetPage() {
         window.location.reload();  // 通过重载页面实现"重置"
     }
+
+    // 页面加载完成后，检查URL参数是否有预选模型
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const preSelectedModel = urlParams.get('model');
+        
+        if (preSelectedModel) {
+            const modelSelect = document.getElementById('model-select');
+            
+            // 遍历所有选项查找匹配的模型
+            let found = false;
+            for (let i = 0; i < modelSelect.options.length; i++) {
+                if (modelSelect.options[i].value === preSelectedModel) {
+                    modelSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            
+            // 如果没找到，可能需要刷新模型列表
+            if (!found) {
+                refreshModelsList();
+                // 延迟设置选中项，等待刷新完成
+                setTimeout(() => {
+                    for (let i = 0; i < modelSelect.options.length; i++) {
+                        if (modelSelect.options[i].value === preSelectedModel) {
+                            modelSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }, 1000);
+            }
+        }
+    });
 </script>
 {% endblock %}
 
