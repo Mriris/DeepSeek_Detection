@@ -200,26 +200,29 @@ def detect():
 
             # 执行第一个 IDA 命令提取特征
             ida_command_1 = f'"{IDA_EXECUTABLE}" -A -S"{EXTRACT_FEATURES_SCRIPT_PATH}" "{file_path}"'
+            print("执行的 IDA 命令1是:", ida_command_1)  # 输出执行的 IDA 命令
             result_1 = subprocess.run(ida_command_1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             if result_1.stderr:
+                print("IDA 执行错误:", result_1.stderr.decode())
                 return jsonify({'error': 'IDA 执行失败'}), 500
 
-            # 执行第二个 IDA 命令运行 VulFi 脚本
-            ida_command_2 = f'"{IDA_EXECUTABLE}" -A -S"{VULFI_SCRIPT_PATH}" "{file_path}"'
-            result_2 = subprocess.run(ida_command_2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-            if result_2.stderr:
-                print("IDA 执行错误:", result_2.stderr.decode())
-                return jsonify({'error': 'IDA 执行失败'}), 500
+            # # 执行第二个 IDA 命令运行 VulFi 脚本
+            # ida_command_2 = f'"{IDA_EXECUTABLE}" -A -S"{VULFI_SCRIPT_PATH}" "{file_path}"'
+            # print("执行的 IDA 命令2是:", ida_command_2)  # 输出执行的 IDA 命令
+            # result_2 = subprocess.run(ida_command_2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #
+            # if result_2.stderr:
+            #     print("IDA 执行错误:", result_2.stderr.decode())
+            #     return jsonify({'error': 'IDA 执行失败'}), 500
 
             # 获取并处理 VulFi 数据
             vulfi_data = read_vulfi_file(VULFI_FILE_PATH)
             extracted_functions = read_extracted_functions(EXTRACTED_FUNCTIONS_FILE_PATH)
 
             # 调试：输出读取的 VulFi 数据和函数数据
-            # print("VulFi 数据读取成功:", vulfi_data[:2])  # 输出前两行数据
-            # print("函数数据读取成功:", extracted_functions[:2])  # 输出前两行数据
+            print("VulFi 数据读取成功:", vulfi_data[:2])  # 输出前两行数据
+            print("函数数据读取成功:", extracted_functions[:2])  # 输出前两行数据
 
             # 生成最终的数据
             extracted_data = extract_vulfi_data(vulfi_data, extracted_functions)
