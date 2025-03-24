@@ -1454,5 +1454,150 @@ def api_delete_trained_model(model_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# 添加模拟漏洞数据API
+@app.route('/api/vulnerabilities', methods=['GET'])
+def get_vulnerabilities():
+    """获取漏洞列表API"""
+    # 获取分页参数
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 15))
+    
+    # 模拟漏洞数据库 - 生成三页的数据
+    vulnerabilities = [
+        # 第一页数据
+        {"id": "CVE-2023-7112", "risk_level": "高危", "type": "内存泄露", "function": "malloc_handler", 
+         "description": "Linux内核中的内存分配函数存在UAF漏洞", "details": "在Linux内核5.15版本中发现，malloc_handler函数在处理内存分配请求时未能正确验证释放后的内存引用。攻击者可利用该漏洞执行任意代码或导致系统崩溃。"},
+        {"id": "CVE-2023-6193", "risk_level": "中危", "type": "认证绕过", "function": "auth_verify", 
+         "description": "身份验证模块中的会话处理逻辑存在缺陷", "details": "在用户会话验证过程中，auth_verify函数没有正确验证会话令牌的有效性，导致攻击者可能绕过身份验证机制。"},
+        {"id": "CVE-2023-5164", "risk_level": "高危", "type": "注入攻击", "function": "parse_input", 
+         "description": "输入解析函数中存在命令注入漏洞", "details": "parse_input函数在处理用户输入时未正确过滤特殊字符，攻击者可以注入系统命令并执行。此漏洞影响所有使用该解析库的应用程序。"},
+        {"id": "CVE-2023-4872", "risk_level": "低危", "type": "拒绝服务", "function": "connection_pool", 
+         "description": "网络连接池管理不当导致资源耗尽", "details": "connection_pool函数在高负载情况下未能正确释放不活跃的连接，可能导致资源耗尽和服务不可用。"},
+        {"id": "CVE-2023-3567", "risk_level": "高危", "type": "整数溢出", "function": "calc_offset", 
+         "description": "数组索引计算函数存在整数溢出漏洞", "details": "calc_offset在计算大型数组索引时可能发生整数溢出，导致访问非法内存位置。攻击者可利用此漏洞实现权限提升或执行任意代码。"},
+        {"id": "CVE-2023-2912", "risk_level": "中危", "type": "信息泄露", "function": "log_formatter", 
+         "description": "日志格式化函数泄露敏感信息", "details": "log_formatter函数在处理异常时可能将内部状态信息输出到日志中，包括可能的凭证和会话数据。"},
+        {"id": "CVE-2023-1849", "risk_level": "高危", "type": "缓冲区溢出", "function": "str_copy", 
+         "description": "字符串复制函数未检查缓冲区大小", "details": "str_copy函数在复制用户提供的字符串时未验证目标缓冲区大小，可能导致栈溢出。攻击者可通过精心构造的输入触发此漏洞。"},
+        {"id": "CVE-2023-0921", "risk_level": "中危", "type": "竞态条件", "function": "file_check", 
+         "description": "文件权限检查存在时间窗口漏洞", "details": "file_check函数在检查文件权限和访问文件之间存在时间窗口，攻击者可利用此漏洞访问未授权的文件。"},
+        {"id": "CVE-2022-9876", "risk_level": "低危", "type": "XML注入", "function": "xml_parser", 
+         "description": "XML解析器未正确处理外部实体", "details": "xml_parser函数允许处理外部实体引用，可能导致服务器端请求伪造（SSRF）或信息泄露攻击。"},
+        {"id": "CVE-2022-8721", "risk_level": "高危", "type": "远程代码执行", "function": "deserialize_object", 
+         "description": "不安全的反序列化操作允许代码执行", "details": "deserialize_object函数在处理用户提供的序列化数据时没有进行适当的类型检查，可能导致远程代码执行。"},
+        {"id": "CVE-2022-7654", "risk_level": "中危", "type": "跨站脚本", "function": "render_html", 
+         "description": "HTML渲染函数未正确过滤用户输入", "details": "render_html函数未对用户输入进行适当的转义，允许攻击者注入恶意JavaScript代码。"},
+        {"id": "CVE-2022-6543", "risk_level": "高危", "type": "权限提升", "function": "check_permissions", 
+         "description": "权限验证逻辑存在缺陷", "details": "check_permissions函数在验证用户权限时存在逻辑错误，特权用户可能获得系统管理员权限。"},
+        {"id": "CVE-2022-5432", "risk_level": "中危", "type": "SSL/TLS漏洞", "function": "verify_cert", 
+         "description": "证书验证不完全导致中间人攻击风险", "details": "verify_cert函数在验证SSL证书时未检查吊销状态，增加了中间人攻击的风险。"},
+        {"id": "CVE-2022-4321", "risk_level": "低危", "type": "HTTP请求走私", "function": "http_parser", 
+         "description": "HTTP请求解析不当导致请求走私", "details": "http_parser函数未正确处理带有歧义的HTTP请求，可能导致请求走私攻击。"},
+        {"id": "CVE-2022-3210", "risk_level": "高危", "type": "CSRF漏洞", "function": "process_form", 
+         "description": "表单处理缺少CSRF保护", "details": "process_form函数在处理表单提交时未验证CSRF令牌，使应用程序容易受到跨站请求伪造攻击。"},
+        
+        # 第二页数据
+        {"id": "CVE-2022-2109", "risk_level": "中危", "type": "SQL注入", "function": "execute_query", 
+         "description": "数据库查询函数存在SQL注入风险", "details": "execute_query函数在构建SQL查询时使用字符串拼接而非参数化查询，导致潜在的SQL注入漏洞。"},
+        {"id": "CVE-2022-1098", "risk_level": "高危", "type": "路径遍历", "function": "load_file", 
+         "description": "文件加载函数未验证路径", "details": "load_file函数未对用户提供的文件路径进行适当的规范化和验证，允许攻击者访问未授权的文件。"},
+        {"id": "CVE-2022-0987", "risk_level": "中危", "type": "暴力破解", "function": "password_check", 
+         "description": "密码验证缺少速率限制", "details": "password_check函数未实现适当的速率限制机制，使系统容易受到暴力破解攻击。"},
+        {"id": "CVE-2021-9876", "risk_level": "高危", "type": "缓存投毒", "function": "cache_manager", 
+         "description": "缓存管理系统缺少验证", "details": "cache_manager函数在刷新缓存时未验证来源，攻击者可能注入恶意数据到缓存中。"},
+        {"id": "CVE-2021-8765", "risk_level": "中危", "type": "会话固定", "function": "create_session", 
+         "description": "会话管理未在身份验证后更新会话标识", "details": "create_session函数在用户登录后未重新生成会话ID，使系统容易受到会话固定攻击。"},
+        {"id": "CVE-2021-7654", "risk_level": "低危", "type": "点击劫持", "function": "render_page", 
+         "description": "网页渲染缺少框架保护头", "details": "render_page函数未设置X-Frame-Options头，使网页容易被嵌入到恶意网站中进行点击劫持攻击。"},
+        {"id": "CVE-2021-6543", "risk_level": "高危", "type": "服务器端请求伪造", "function": "fetch_url", 
+         "description": "URL获取函数未验证目标", "details": "fetch_url函数允许获取任意URL的内容，可能被用于服务器端请求伪造攻击，访问内部资源。"},
+        {"id": "CVE-2021-5432", "risk_level": "中危", "type": "HTTP响应拆分", "function": "set_header", 
+         "description": "HTTP响应头设置不安全", "details": "set_header函数未过滤换行符，攻击者可能注入额外的HTTP头或响应体，导致HTTP响应拆分攻击。"},
+        
+        # 第三页数据
+        {"id": "CVE-2021-4321", "risk_level": "高危", "type": "文件包含", "function": "include_template", 
+         "description": "模板包含函数容易受到远程文件包含攻击", "details": "include_template函数允许包含远程文件作为模板，攻击者可能利用此漏洞执行任意代码。"},
+        {"id": "CVE-2021-3210", "risk_level": "中危", "type": "XML外部实体", "function": "parse_xml", 
+         "description": "XML解析器允许处理外部实体", "details": "parse_xml函数允许处理XML外部实体引用，可能导致文件读取、SSRF或拒绝服务攻击。"},
+        {"id": "CVE-2021-2109", "risk_level": "高危", "type": "反序列化漏洞", "function": "load_object", 
+         "description": "对象加载函数使用不安全的反序列化", "details": "load_object函数在反序列化用户提供的数据时未进行适当的类型检查和验证，可能导致远程代码执行。"},
+        {"id": "CVE-2021-1098", "risk_level": "中危", "type": "跨域资源共享", "function": "cors_handler", 
+         "description": "CORS配置过于宽松", "details": "cors_handler函数配置了过于宽松的跨域资源共享策略，可能允许恶意网站访问敏感数据。"},
+        {"id": "CVE-2021-0987", "risk_level": "低危", "type": "不安全的重定向", "function": "redirect_to", 
+         "description": "URL重定向未验证目标", "details": "redirect_to函数未验证重定向URL，攻击者可能利用此漏洞将用户引导至恶意网站。"},
+        {"id": "CVE-2020-9876", "risk_level": "高危", "type": "组件漏洞", "function": "library_function", 
+         "description": "使用的第三方库存在已知漏洞", "details": "应用程序依赖的某第三方库存在已知的远程代码执行漏洞，需要更新到最新版本。"},
+        {"id": "CVE-2020-8765", "risk_level": "中危", "type": "密码存储", "function": "hash_password", 
+         "description": "密码哈希算法过时", "details": "hash_password函数使用了过时的MD5算法存储密码，缺乏足够的安全性来抵抗现代破解技术。"},
+        {"id": "CVE-2020-7654", "risk_level": "高危", "type": "整数溢出", "function": "calculate_size", 
+         "description": "内存分配计算函数存在整数溢出", "details": "calculate_size函数在计算所需内存大小时可能发生整数溢出，导致分配的缓冲区小于实际需要的大小，引发缓冲区溢出。"}
+    ]
+    
+    # 计算总页数和当前页数据
+    total_items = len(vulnerabilities)
+    total_pages = (total_items + page_size - 1) // page_size
+    
+    start_idx = (page - 1) * page_size
+    end_idx = min(start_idx + page_size, total_items)
+    current_page_data = vulnerabilities[start_idx:end_idx]
+    
+    return jsonify({
+        "vulnerabilities": current_page_data,
+        "total": total_items,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    })
+
+# 获取漏洞详情API
+@app.route('/api/vulnerabilities/<vuln_id>', methods=['GET'])
+def get_vulnerability_details(vuln_id):
+    """获取指定漏洞的详细信息"""
+    # 模拟从数据库中查询具体漏洞
+    vulnerabilities = [
+        # 这里应该包含与上面相同的漏洞数据，但为了简化代码，可以只包含几个示例
+        {"id": "CVE-2023-7112", "risk_level": "高危", "type": "内存泄露", "function": "malloc_handler", 
+         "description": "Linux内核中的内存分配函数存在UAF漏洞", 
+         "details": "在Linux内核5.15版本中发现，malloc_handler函数在处理内存分配请求时未能正确验证释放后的内存引用。攻击者可利用该漏洞执行任意代码或导致系统崩溃。",
+         "affected_versions": "Linux内核 5.10 - 5.15",
+         "cve_reference": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-7112",
+         "discovered_date": "2023-06-15"
+        },
+        {"id": "CVE-2021-44228", "risk_level": "高危", "type": "远程代码执行", "function": "parse_log_message", 
+         "description": "lib/logging/parse_log_message.c 中存在远程代码执行漏洞",
+         "details": "parse_log_message函数在处理包含JNDI查找的日志消息时，可能导致远程代码执行。攻击者可以通过发送特制的请求触发此漏洞，从而在目标系统上执行任意代码。",
+         "affected_versions": "所有使用Log4j 2.0至2.14.1版本的系统",
+         "cve_reference": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-44228",
+         "discovered_date": "2021-12-09"
+        }
+    ]
+    
+    # 模拟漏洞数据，根据ID返回详细信息
+    vuln = None
+    for v in vulnerabilities:
+        if v["id"] == vuln_id:
+            vuln = v
+            break
+    
+    if not vuln:
+        # 如果找不到指定ID的漏洞，生成一个模拟数据
+        risk_levels = ["高危", "中危", "低危"]
+        types = ["缓冲区溢出", "SQL注入", "XSS攻击", "命令注入", "权限提升", "拒绝服务"]
+        import random
+        
+        vuln = {
+            "id": vuln_id,
+            "risk_level": random.choice(risk_levels),
+            "type": random.choice(types),
+            "function": f"function_{vuln_id.split('-')[-1].lower()}",
+            "description": f"这是{vuln_id}的漏洞描述信息，通常描述漏洞可能造成的影响和产生的原因。",
+            "details": f"这是{vuln_id}的详细信息，包含漏洞的技术细节、利用方法和影响范围等。攻击者可能利用此漏洞执行未授权操作或获取敏感信息。",
+            "affected_versions": "受影响的版本范围: 1.0.0 - 2.3.5",
+            "cve_reference": f"https://cve.mitre.org/cgi-bin/cvename.cgi?name={vuln_id}",
+            "discovered_date": "2023-01-15"
+        }
+    
+    return jsonify(vuln)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
