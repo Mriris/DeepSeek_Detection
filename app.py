@@ -1098,46 +1098,47 @@ def api_preview_document(kb_id, doc_id):
         # 记录请求信息
         api_logger.info(f"文档预览请求 - 知识库ID: {kb_id}, 文档ID: {doc_id}")
         
-        # 构建请求URL
-        request_url = f"{RAGFLOW_API_URL}/api/v1/datasets/{kb_id}/documents/{doc_id}"
+        # 获取查询参数
+        keywords = request.args.get('keywords', '')
         
-        # 发送请求获取文档详情
+        # 构建请求URL - 使用chunks API获取文档内容
+        request_url = f"{RAGFLOW_API_URL}/api/v1/datasets/{kb_id}/documents/{doc_id}/chunks"
+        
+        # 准备查询参数
+        params = {}
+        if keywords:
+            params['keywords'] = keywords
+        
+        # 发送请求获取文档块内容
+        api_logger.info(f"请求文档块内容 - URL: {request_url}, 参数: {params}")
         response = requests.get(
             request_url,
             headers=headers,
+            params=params,
             timeout=10  # 增加超时时间，因为文档可能较大
         )
         
         # 检查响应状态
         if response.status_code == 200:
-            api_logger.info(f"获取文档详情成功 - 状态码: {response.status_code}")
-            doc_data = response.json()
+            api_logger.info(f"获取文档块内容成功 - 状态码: {response.status_code}")
+            data = response.json()
             
-            # 检查是否需要获取文档内容
-            if "content" not in doc_data and "chunks" not in doc_data:
-                # 获取文档内容
-                content_url = f"{RAGFLOW_API_URL}/api/v1/datasets/{kb_id}/documents/{doc_id}/content"
-                content_response = requests.get(
-                    content_url,
-                    headers=headers,
-                    timeout=15  # 内容获取可能需要更长时间
-                )
-                
-                if content_response.status_code == 200:
-                    api_logger.info(f"获取文档内容成功 - 状态码: {content_response.status_code}")
-                    content_data = content_response.json()
-                    
-                    # 合并详情和内容数据
-                    if isinstance(content_data, dict):
-                        doc_data.update(content_data)
-                    elif isinstance(content_data, str):
-                        doc_data["content"] = content_data
-                else:
-                    api_logger.error(f"获取文档内容失败: {content_response.status_code}, 响应: {content_response.text}")
-            
-            return jsonify(doc_data)
+            # 检查响应格式
+            if isinstance(data, dict) and data.get('code') == 0 and 'data' in data:
+                # 返回标准化的响应格式
+                return jsonify({
+                    "success": True,
+                    "chunks": data['data'].get('chunks', []),
+                    "doc_info": data['data'].get('doc', {}),
+                    "total_chunks": data['data'].get('total', 0),
+                    "keywords": keywords  # 返回搜索的关键词
+                })
+            else:
+                # 如果响应格式不符合预期，返回原始数据
+                api_logger.warning(f"文档块内容响应格式不符合预期: {data}")
+                return jsonify(data)
         else:
-            error_msg = f"获取文档详情失败: {response.status_code}, 响应: {response.text}"
+            error_msg = f"获取文档块内容失败: {response.status_code}, 响应: {response.text}"
             api_logger.error(error_msg)
             return jsonify({"error": error_msg}), 500
     except Exception as e:
