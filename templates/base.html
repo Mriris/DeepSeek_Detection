@@ -50,8 +50,6 @@
         <nav id="navmenu" class="navmenu">
             <ul>
                 <li><a href="/">主页</a></li> <!-- 首页 -->
-                <li><a href="/model_training">模型训练</a></li> <!-- 模型训练页面 -->
-                <li><a href="/vulnerability_management">漏洞信息管理</a></li> <!-- 漏洞信息管理页面 -->
                 <li><a href="/project-details">项目详情</a></li> <!-- 服务详情页面 -->
                 <li><a href="/login">登录</a></li>
             </ul>
@@ -60,10 +58,26 @@
         <a class="btn-getstarted" href="/detective">开始</a>
     </div>
 </header>
+
+<!-- 左侧侧边栏 (仅在特定页面显示) -->
+<div class="left-sidebar" id="leftSidebar">
+    <div class="sidebar-header">
+        <h5>功能菜单</h5>
+    </div>
+    <div class="sidebar-menu">
+        <ul>
+            <li><a href="/detective"><i class="bi bi-search"></i> 漏洞检测</a></li>
+            <li><a href="/model_training"><i class="bi bi-gpu-card"></i> 模型训练</a></li>
+            <li><a href="/vulnerability_management"><i class="bi bi-shield-exclamation"></i> 漏洞信息管理</a></li>
+        </ul>
+    </div>
+</div>
+
 <!-- Main Content -->
-<main class="main">
+<main class="main" id="mainContent">
     {% block content %}{% endblock %}
 </main>
+
 <!-- 侧边栏 -->
 <div class="sidebar" id="aiSidebar">
     <!-- 拖拽条 -->
@@ -81,6 +95,80 @@
 </button>
 
 <style>
+    /* 左侧侧边栏样式 */
+    .left-sidebar {
+        position: fixed;
+        left: -250px; /* 默认隐藏 */
+        top: 80px; /* 与顶部导航栏高度一致 */
+        width: 250px;
+        height: calc(100vh - 80px);
+        background-color: #2c3e50;
+        color: white;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        z-index: 999;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    /* 在需要显示侧边栏的页面上添加此类 */
+    body.show-left-sidebar .left-sidebar {
+        left: 0;
+    }
+    
+    /* 在显示侧边栏时调整主内容区域 */
+    body.show-left-sidebar #mainContent {
+        margin-left: 250px;
+    }
+    
+    .sidebar-header {
+        padding: 15px;
+        background-color: #1a2530;
+        border-bottom: 1px solid #3d5266;
+    }
+    
+    .sidebar-menu ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .sidebar-menu ul li {
+        border-bottom: 1px solid #3d5266;
+    }
+    
+    .sidebar-menu ul li a {
+        display: block;
+        padding: 15px;
+        color: #ecf0f1;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+    
+    .sidebar-menu ul li a:hover {
+        background-color: #34495e;
+    }
+    
+    .sidebar-menu ul li a:active {
+        background-color: #34495e;
+    }
+    
+    .sidebar-menu i {
+        margin-right: 10px;
+    }
+    
+    /* 为主内容区域添加顶部边距，避免被导航栏遮挡 */
+    #mainContent {
+        transition: margin-left 0.3s ease;
+        padding-top: 80px; /* 添加与导航栏等高的顶部内边距 */
+    }
+    
+    /* 为提示信息块添加样式 */
+    #mainContent .alert {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+    
+    /* 保持现有样式 */
     .toggle-btn:hover {
         transform: translateY(-3px);
         box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
@@ -175,6 +263,29 @@
         });
         
         observer.observe(sidebar, { attributes: true });
+    });
+
+    // 检查当前页面是否需要显示左侧侧边栏
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取当前页面路径
+        const currentPath = window.location.pathname;
+        
+        // 需要显示左侧侧边栏的页面列表
+        const sidebarPages = ['/detective', '/model_training', '/vulnerability_management'];
+        
+        // 如果当前页面在列表中，显示左侧侧边栏
+        if (sidebarPages.includes(currentPath)) {
+            document.body.classList.add('show-left-sidebar');
+        }
+        
+        // 根据当前页面高亮对应的菜单项
+        const menuItems = document.querySelectorAll('.sidebar-menu a');
+        menuItems.forEach(item => {
+            if (item.getAttribute('href') === currentPath) {
+                item.style.backgroundColor = '#3498db';
+                item.style.fontWeight = 'bold';
+            }
+        });
     });
 
 </script>
