@@ -62,7 +62,10 @@
 <!-- 左侧侧边栏 (仅在特定页面显示) -->
 <div class="left-sidebar" id="leftSidebar">
     <div class="sidebar-header">
-        <h5>功能菜单</h5>
+        <h5 style="color: white !important; font-weight: bold !important; text-align: center !important;">功能菜单</h5>
+        <button id="toggleLeftSidebar" class="toggle-left-btn">
+            <i class="bi bi-chevron-left"></i>
+        </button>
     </div>
     <div class="sidebar-menu">
         <ul>
@@ -72,6 +75,11 @@
             <li><a href="/vulnerability_management"><i class="bi bi-shield-exclamation"></i> 漏洞信息管理</a></li>
         </ul>
     </div>
+</div>
+
+<!-- 侧边栏折叠时的小按钮 -->
+<div id="expandLeftSidebar" class="expand-btn">
+    <i class="bi bi-chevron-right"></i>
 </div>
 
 <!-- Main Content -->
@@ -111,6 +119,37 @@
         overflow-y: auto;
     }
     
+    /* 侧边栏折叠按钮 */
+    .toggle-left-btn {
+        position: absolute;
+        right: 10px;
+        top: 15px;
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    
+    /* 折叠时显示的展开按钮 */
+    .expand-btn {
+        position: fixed;
+        left: 0;
+        top: 120px;
+        width: 25px;
+        height: 50px;
+        background-color: #2c3e50;
+        color: white;
+        border-radius: 0 5px 5px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 998;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        display: none;
+    }
+    
     /* 在需要显示侧边栏的页面上添加此类 */
     body.show-left-sidebar .left-sidebar {
         left: 0;
@@ -119,6 +158,18 @@
     /* 在显示侧边栏时调整主内容区域 */
     body.show-left-sidebar #mainContent {
         margin-left: 250px;
+    }
+    
+    body.sidebar-collapsed .expand-btn {
+        display: flex;
+    }
+    
+    body.sidebar-collapsed.show-left-sidebar .left-sidebar {
+        left: -250px;
+    }
+    
+    body.sidebar-collapsed.show-left-sidebar #mainContent {
+        margin-left: 0;
     }
     
     .sidebar-header {
@@ -204,6 +255,22 @@
 </style>
 
 <script>
+    // 左侧侧边栏收起功能
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('toggleLeftSidebar');
+        const expandBtn = document.getElementById('expandLeftSidebar');
+        
+        if (toggleBtn && expandBtn) {
+            toggleBtn.addEventListener('click', function() {
+                document.body.classList.add('sidebar-collapsed');
+            });
+            
+            expandBtn.addEventListener('click', function() {
+                document.body.classList.remove('sidebar-collapsed');
+            });
+        }
+    });
+    
     const sidebar = document.getElementById('aiSidebar');
     const resizer = document.getElementById('sidebarResizer');
 
