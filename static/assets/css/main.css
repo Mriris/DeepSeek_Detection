@@ -32,7 +32,7 @@
 }
 
 .custom-text { /*第二部分主体颜色*/
-    color: #333333 !important; /* 字体颜色 */
+    color: #111111 !important; /* 字体颜色，从#333333改为#111111 */
     font-size: 18px; /* 字体大小 */
 }
 
@@ -159,7 +159,7 @@ body .content * h5 {
 #analysis-result span:not(span:has(h1, h2, h3, h4, h5, h6)),
 #analysis-result div:not(div:has(h1, h2, h3, h4, h5, h6)),
 #analysis-result li {
-    color: #333333;
+    color: #111111 !important;
 }
 
 /* 修改表格样式 */

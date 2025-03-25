@@ -5,6 +5,7 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    color: #111111;
 }
 
 .container {
@@ -362,4 +363,42 @@ code {
 .table-light {
     color: #000000 !important;
     font-weight: 600 !important;
+}
+
+.custom-text { /*第二部分主体颜色*/
+    color: #111111 !important; /* 字体颜色由#333333改为#111111，使其更深 */
+    font-size: 18px; /* 字体大小 */
+}
+
+/* 确保所有普通文本使用深色 */
+#analysis-result p,
+#analysis-result span:not(span:has(h1, h2, h3, h4, h5, h6)),
+#analysis-result div:not(div:has(h1, h2, h3, h4, h5, h6)),
+#analysis-result li,
+#vulnerability-result p,
+#vulnerability-result span:not(span:has(h1, h2, h3, h4, h5, h6)),
+#vulnerability-result div:not(div:has(h1, h2, h3, h4, h5, h6)),
+#vulnerability-result li,
+#stream-output p,
+#stream-output li,
+.card-body p,
+.think-last-line,
+.markdown-body p,
+.markdown-body li {
+    color: #111111 !important; /* 设置为更深的颜色 */
+}
+
+/* 针对思考内容的样式 */
+.think-content {
+    color: #111111 !important;
+}
+
+/* 针对Markdown渲染内容的样式 */
+.markdown-body {
+    color: #111111 !important;
+}
+
+/* 增强card内容的可读性 */
+.card p, .card li, .card span:not(.badge):not(.text-muted) {
+    color: #111111 !important;
 }

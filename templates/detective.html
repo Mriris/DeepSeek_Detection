@@ -1,5 +1,61 @@
 {% extends 'base.html' %}
 
+<!-- 在head部分之前添加自定义样式 -->
+{% block custom_styles %}
+<style>
+    /* 确保流式输出中的文本是深色的，但不修改其他样式 */
+    #stream-output p, 
+    #stream-output li, 
+    #stream-output span:not(.badge):not(.text-muted),
+    .think-last-line,
+    .think-content {
+        color: #111111 !important;
+    }
+    
+    /* 确保结果卡片中的文本是深色的 */
+    #vulnerability-result .card-body p,
+    #vulnerability-result .card-body li,
+    #vulnerability-result .card-body span:not(.badge):not(.text-muted) {
+        color: #111111 !important;
+    }
+    
+    /* 使Markdown内容更易读 */
+    .marked-content p,
+    .marked-content li,
+    .marked-content pre {
+        color: #111111 !important;
+    }
+    
+    /* 全局规则：强制所有文本为深色，但保留原字体大小 */
+    #vulnerability-result strong,
+    #vulnerability-result b,
+    #vulnerability-result em,
+    #stream-output strong, 
+    #stream-output b,
+    #stream-output em,
+    .think-container strong,
+    .think-container b,
+    .think-container em,
+    .think-summary strong,
+    .card-body strong,
+    .card-body b,
+    .card-body em {
+        color: #111111 !important;
+    }
+    
+    /* 针对特定的Markdown渲染内容进行颜色覆盖，但不影响字体大小 */
+    #stream-output *:not(.badge):not(.text-muted):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+    #vulnerability-result *:not(.badge):not(.text-muted):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+        color: #111111 !important;
+    }
+    
+    /* markdown-dark-text类样式，只修改颜色 */
+    .markdown-dark-text * {
+        color: #111111 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <section id="hero" class="hero section dark-background">
@@ -239,7 +295,7 @@
         const modelSelect = document.getElementById('model-select');
         const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
         console.log("使用模型:", selectedModel);
-        
+
         // 检查是否启用流式输出
         const streamEnabled = document.getElementById('stream-output-toggle').checked;
         console.log("流式输出状态:", streamEnabled ? "已启用" : "已禁用");
@@ -314,18 +370,18 @@
         fetch(`/analyze/${address}?model_name=${selectedModel}&stream=false`, {
             method: 'GET'
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                console.error("分析失败:", data.error);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    console.error("分析失败:", data.error);
                 alert("分析失败: " + data.error);
-            } else {
-                console.log("分析结果:", data.result);
+                } else {
+                    console.log("分析结果:", data.result);
                 // 更新UI显示结果
                 updateAnalysisResult(data.result, selectedModel);
             }
@@ -349,6 +405,19 @@
         let lastChunk = '';  // 用于检测重复内容
         let duplicateCounter = 0;  // 重复计数器
         const streamOutput = document.getElementById('stream-output');
+        
+        // 思考内容跟踪
+        let isThinking = false;
+        let thinkStartTime = null;
+        let thinkContent = '';
+        let normalContent = '';
+        let thinkStartIndex = -1;
+        
+        // 添加统一样式类到流式输出容器
+        if (streamOutput) {
+            streamOutput.classList.add('analysis-content');
+            streamOutput.style.fontSize = getComputedStyle(document.querySelector('.card-body')).fontSize;
+        }
         
         // 处理来自服务器的消息
         eventSource.onmessage = function(event) {
@@ -401,8 +470,47 @@
                                          data.content.substring(0, 1000) + "..." : 
                                          data.content;
                     
-                    // 累积文本
+                    // 累积原始文本
                     accumulatedText += contentToAdd;
+                    
+                    // 检测思考开始和结束标签
+                    const thinkStartTagIndex = contentToAdd.indexOf('<think>');
+                    const thinkEndTagIndex = contentToAdd.indexOf('</think>');
+                    
+                    // 处理思考开始标签
+                    if (thinkStartTagIndex !== -1 && !isThinking) {
+                        isThinking = true;
+                        thinkStartTime = new Date();
+                        console.log('思考开始');
+                        thinkStartIndex = accumulatedText.indexOf('<think>');
+                        
+                        // 分离思考前的内容
+                        normalContent = accumulatedText.substring(0, thinkStartIndex);
+                        // 初始化思考内容（去掉<think>标签）
+                        thinkContent = accumulatedText.substring(thinkStartIndex + 7);
+                    } 
+                    // 如果已经在思考模式中，更新思考内容
+                    else if (isThinking && thinkEndTagIndex === -1) {
+                        // 添加到思考内容
+                        thinkContent += contentToAdd;
+                    }
+                    // 处理思考结束标签
+                    else if (isThinking && thinkEndTagIndex !== -1) {
+                        // 分离思考后的内容
+                        const fullText = accumulatedText;
+                        const endTagIndex = fullText.indexOf('</think>');
+                        
+                        // 更新思考内容（去掉结束标签）
+                        thinkContent = fullText.substring(thinkStartIndex + 7, endTagIndex);
+                        
+                        // 提取思考后的内容
+                        normalContent = fullText.substring(0, thinkStartIndex);
+                        const afterThink = fullText.substring(endTagIndex + 8);
+                        
+                        // 重置思考状态
+                        isThinking = false;
+                        console.log('思考结束');
+                    }
                     
                     // 如果累积内容太长，进行截断
                     if (accumulatedText.length > 10000) {
@@ -423,16 +531,104 @@
                     
                     // 更新流式输出区域
                     if (streamOutput) {
-                        // 尝试解析为Markdown并显示
-                        try {
-                            streamOutput.innerHTML = marked.parse(accumulatedText);
-                        } catch (e) {
-                            // 如果解析失败，直接显示文本
-                            streamOutput.textContent = accumulatedText;
+                        let html = '';
+                        
+                        // 处理思考前的内容
+                        if (normalContent.trim()) {
+                            try {
+                                html += `<div class="normal-content" style="color: #111111;">${marked.parse(normalContent)}</div>`;
+                            } catch (e) {
+                                html += `<div class="normal-content" style="color: #111111;">${normalContent}</div>`;
+                            }
                         }
+                        
+                        // 如果在思考模式中，添加思考区域
+                        if (isThinking || thinkContent) {
+                            // 获取思考内容的最后一行
+                            const thinkLines = thinkContent.split('\n').filter(line => line.trim());
+                            const lastThinkLine = thinkLines.length > 0 ? thinkLines[thinkLines.length - 1] : '';
+                            const thinkCompleted = !isThinking;
+                            
+                            // 思考时间信息
+                            let thinkTimeText = '';
+                            if (thinkCompleted && thinkStartTime) {
+                                const thinkEndTime = new Date();
+                                const thinkDuration = (thinkEndTime - thinkStartTime) / 1000; // 秒
+                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDuration.toFixed(2)}秒，共${thinkLines.length}行</small></div>`;
+                            } else if (isThinking) {
+                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考中...</small></div>`;
+                            }
+                            
+                            // 添加思考部分
+                            html += `
+                                <div class="think-container my-3 border-start border-primary ps-3">
+                                    <div class="think-header d-flex align-items-center">
+                                        <h5 class="mb-2 text-primary"><i class="bi bi-lightbulb"></i> 模型思考过程</h5>
+                                        <button class="btn btn-sm ms-2 think-toggle-btn" title="展开/折叠思考内容">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="think-summary mb-2">
+                                        <div class="think-last-line" style="color: #111111;">${lastThinkLine}</div>
+                                    </div>
+                                    
+                                    <div class="think-details" style="display: none;">
+                                        <pre class="think-content p-2 bg-light rounded" style="color: #111111;">${thinkContent}</pre>
+                                    </div>
+                                    
+                                    ${thinkTimeText}
+                                </div>
+                            `;
+                            
+                            // 添加思考后的内容（如果已完成思考）
+                            if (thinkCompleted) {
+                                const afterThink = accumulatedText.substring(accumulatedText.indexOf('</think>') + 8);
+                                if (afterThink.trim()) {
+                                    try {
+                                        html += `<div class="after-think-content" style="color: #111111;">${marked.parse(afterThink)}</div>`;
+                                    } catch (e) {
+                                        html += `<div class="after-think-content" style="color: #111111;">${afterThink}</div>`;
+                                    }
+                                }
+                            }
+                        } else {
+                            // 如果没有思考内容，直接使用完整的累积文本
+                            try {
+                                html = `<div class="full-content" style="color: #111111;">${marked.parse(accumulatedText)}</div>`;
+                            } catch (e) {
+                                html = `<div class="full-content" style="color: #111111;">${accumulatedText}</div>`;
+                            }
+                        }
+                        
+                        // 显示处理后的内容
+                        streamOutput.innerHTML = html;
+                        
+                        // 应用与非流式输出相同的样式
+                        const allElements = streamOutput.querySelectorAll('p, li, strong, b, em, span:not(.badge):not(.text-muted)');
+                        allElements.forEach(el => {
+                            el.style.color = '#111111';
+                        });
                         
                         // 滚动到底部
                         streamOutput.scrollTop = streamOutput.scrollHeight;
+                        
+                        // 添加事件监听器到展开/折叠按钮
+                        const toggleBtn = streamOutput.querySelector('.think-toggle-btn');
+                        if (toggleBtn) {
+                            toggleBtn.onclick = function() {
+                                const thinkDetails = document.querySelector('.think-details');
+                                const isExpanded = thinkDetails.style.display !== 'none';
+                                
+                                // 切换显示状态
+                                thinkDetails.style.display = isExpanded ? 'none' : 'block';
+                                
+                                // 更新按钮图标
+                                this.innerHTML = isExpanded ? 
+                                    '<i class="bi bi-chevron-down"></i>' : 
+                                    '<i class="bi bi-chevron-up"></i>';
+                            };
+                        }
                     }
                 }
             } catch (e) {
@@ -497,39 +693,149 @@
         const resultSection = document.querySelector('#vulnerability-result');
         if (!resultSection) return;
         
+        // 格式化处理思考内容
+        const formattedContent = formatContentWithThinking(markdownContent);
         
         resultSection.innerHTML = `
-        <section id="vulnerability-analysis" class="section light-background" data-aos="fade-up">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <!-- 标题部分 -->
-                        <div class="text-center mb-5">
-                            <h2 class="fw-bold" style="color: #37517e; margin-bottom: 20px;">
-                                <i class="bi bi-shield-exclamation"></i> 漏洞分析结果
-                            </h2>
-                            <div class="divider-custom">
-                                <div class="divider-custom-line"></div>
-                                <div class="divider-custom-line"></div>
+                    <section id="vulnerability-analysis" class="section light-background" data-aos="fade-up">
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-10">
+                                    <!-- 标题部分 -->
+                                    <div class="text-center mb-5">
+                                        <h2 class="fw-bold" style="color: #37517e; margin-bottom: 20px;">
+                                            <i class="bi bi-shield-exclamation"></i> 漏洞分析结果
+                                        </h2>
+                                        <div class="divider-custom">
+                                            <div class="divider-custom-line"></div>
+                                            <div class="divider-custom-line"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 分析结果卡片 -->
+                                    <div class="card mb-4 shadow-sm border-0">
+                                        <div class="card-body p-4">
+                                ${formattedContent}
+                                        </div>
+                                        <div class="card-footer bg-light p-3">
+                                            <small class="text-muted">
+                                                <i class="bi bi-cpu"></i> 由 <strong>${selectedModel}</strong> 模型分析
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- 分析结果卡片 -->
-                        <div class="card mb-4 shadow-sm border-0">
-                            <div class="card-body p-4">
-                                ${marked.parse(markdownContent)}
-                            </div>
-                            <div class="card-footer bg-light p-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-cpu"></i> 由 <strong>${selectedModel}</strong> 模型分析
-                                </small>
-                            </div>
-                        </div>
-                    </div>
+                    </section>
+                    `;
+        
+        // 添加事件监听器到展开/折叠按钮
+        const toggleBtn = resultSection.querySelector('.think-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.onclick = function() {
+                const thinkDetails = resultSection.querySelector('.think-details');
+                const isExpanded = thinkDetails.style.display !== 'none';
+                
+                // 切换显示状态
+                thinkDetails.style.display = isExpanded ? 'none' : 'block';
+                
+                // 更新按钮图标
+                this.innerHTML = isExpanded ? 
+                    '<i class="bi bi-chevron-down"></i>' : 
+                    '<i class="bi bi-chevron-up"></i>';
+            };
+        }
+        
+        // 确保分析结果中的所有文本都是深色的，但不改变其他样式
+        const textElements = resultSection.querySelectorAll('p, li, strong, b, em, span:not(.badge):not(.text-muted)');
+        textElements.forEach(el => {
+            el.style.color = '#111111';
+        });
+    }
+
+    // 格式化包含思考内容的文本
+    function formatContentWithThinking(content) {
+        // 提取思考内容
+        const thinkStartIndex = content.indexOf('<think>');
+        const thinkEndIndex = content.indexOf('</think>');
+        
+        // 如果没有思考标签，直接返回Markdown解析后的内容
+        if (thinkStartIndex === -1) {
+            try {
+                return marked.parse(content);
+            } catch (e) {
+                return content;
+            }
+        }
+        
+        // 获取思考内容和非思考内容
+        const beforeThink = content.substring(0, thinkStartIndex);
+        let thinkContent = '';
+        let afterThink = '';
+        
+        // 如果找到完整的思考标签
+        if (thinkEndIndex !== -1 && thinkEndIndex > thinkStartIndex) {
+            thinkContent = content.substring(thinkStartIndex + 7, thinkEndIndex);
+            afterThink = content.substring(thinkEndIndex + 8);
+        } 
+        // 如果只有开始标签但没有结束标签
+        else if (thinkStartIndex !== -1) {
+            thinkContent = content.substring(thinkStartIndex + 7);
+        }
+        
+        // 获取思考内容的最后一行
+        const thinkLines = thinkContent.split('\n').filter(line => line.trim());
+        const lastThinkLine = thinkLines.length > 0 ? thinkLines[thinkLines.length - 1] : '';
+        
+        // 计算思考完成状态和信息
+        const isThinkingComplete = thinkEndIndex !== -1;
+        const thinkTimeText = thinkLines.length > 0 ? 
+            `<div class="think-time mt-2 mb-2 text-muted"><small>${isThinkingComplete ? '思考完成' : '思考中...'}，共${thinkLines.length}行</small></div>` : '';
+        
+        // 构建HTML
+        let html = '';
+        
+        // 添加思考前的内容
+        if (beforeThink.trim()) {
+            try {
+                html += marked.parse(beforeThink);
+            } catch (e) {
+                html += beforeThink;
+            }
+        }
+        
+        // 添加思考部分
+        html += `
+            <div class="think-container my-3 border-start border-primary ps-3">
+                <div class="think-header d-flex align-items-center">
+                    <h5 class="mb-2 text-primary"><i class="bi bi-lightbulb"></i> 模型思考过程</h5>
+                    <button class="btn btn-sm ms-2 think-toggle-btn" title="展开/折叠思考内容">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
                 </div>
+                
+                <div class="think-summary mb-2">
+                    <div class="think-last-line">${lastThinkLine}</div>
+                </div>
+                
+                <div class="think-details" style="display: none;">
+                    <pre class="think-content p-2 bg-light rounded" style="color: #111111;">${thinkContent}</pre>
+                </div>
+                
+                ${thinkTimeText}
             </div>
-        </section>
         `;
+        
+        // 添加思考后的内容
+        if (afterThink.trim()) {
+            try {
+                html += marked.parse(afterThink);
+            } catch (e) {
+                html += afterThink;
+            }
+        }
+        
+        return html;
     }
 
     // 处理Markdown内容，将其分解为不同的部分
