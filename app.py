@@ -301,7 +301,24 @@ def get_context_instructions(instruction_index, all_instructions, context_range=
 # 构建漏洞检测提示词
 def build_vulnerability_prompt(instruction, previous_instructions, next_instructions):
     """构建用于漏洞检测的提示词"""
-    return f"请检测以下特征(汇编指令)的潜在漏洞，用中文进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{instruction['instruction']}\", \"issue_name\": \"{instruction['issue_name']}\", \"priority\": \"{instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
+    return f"""# 汇编代码漏洞分析报告
+
+## 分析对象
+- 风险指令: {{"instruction": "{instruction['instruction']}", "issue_name": "{instruction['issue_name']}", "priority": "{instruction['priority']}"}}
+
+## 上下文
+- 前序指令: {json.dumps(previous_instructions, ensure_ascii=False, indent=2)}
+- 后续指令: {json.dumps(next_instructions, ensure_ascii=False, indent=2)}
+
+请基于以上数据，生成完整的漏洞分析报告，包含以下内容：
+
+1. 漏洞类型和风险等级
+2. 漏洞详细描述和原理
+3. 漏洞可能造成的影响
+4. 可行的修复方案或缓解措施
+5. 针对此类漏洞的最佳安全实践建议
+
+请保持专业、严谨的技术语言，清晰地用中文阐述问题和解决方案。"""
 
 
 # 文件保存时重命名为 'Application' 并保留扩展名
