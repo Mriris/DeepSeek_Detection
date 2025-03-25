@@ -176,7 +176,7 @@ def get_all_available_models():
 
 
 # 核心漏洞分析函数
-def analyze_vulnerability_core(features, address=None, model_name=DEFAULT_MODEL):
+def analyze_vulnerability_core(features, address=None, model_name=DEFAULT_MODEL, stream=False):
     """
     执行漏洞分析的核心逻辑
     
@@ -184,9 +184,11 @@ def analyze_vulnerability_core(features, address=None, model_name=DEFAULT_MODEL)
         features (dict): 包含all_instructions和priority_instructions的特征数据
         address (str, optional): 特定指令的地址。如果为None，使用第一个优先级指令
         model_name (str, optional): 使用的模型名称
+        stream (bool, optional): 是否使用流式输出，默认为False
     
     Returns:
-        str: 分析结果文本，或者None如果分析失败
+        如果stream=False, 返回str: 分析结果文本，或者None如果分析失败
+        如果stream=True, 返回generator: 生成分析结果文本的流式生成器
     """
     try:
         # 查找风险指令
@@ -243,13 +245,21 @@ def analyze_vulnerability_core(features, address=None, model_name=DEFAULT_MODEL)
 
         print(f"使用模型: {model_name} 进行分析")
         
-        # 调用模型进行分析
-        response = ollama.chat(model=model_name, messages=[{'role': 'user', 'content': message_content}])
-
-        if 'message' in response:
-            result_content = response['message']['content']
-            print(result_content)
-            return result_content
+        # 调用模型进行分析，根据stream参数决定是否使用流式输出
+        if stream:
+            # 返回流式生成器
+            return ollama.chat(
+                model=model_name, 
+                messages=[{'role': 'user', 'content': message_content}],
+                stream=True
+            )
+        else:
+            # 返回完整响应
+            response = ollama.chat(model=model_name, messages=[{'role': 'user', 'content': message_content}])
+            if 'message' in response:
+                result_content = response['message']['content']
+                print(result_content)
+                return result_content
         
         return None
     except Exception as e:
@@ -540,6 +550,8 @@ def analyze_vulnerability(address):
     try:
         # 获取用户选择的模型
         model_name = request.args.get('model_name', DEFAULT_MODEL)
+        # 获取是否使用流式输出的参数
+        stream = request.args.get('stream', 'false').lower() == 'true'
 
         # 如果选择的是训练模型，找到对应的基础模型
         if ':' not in model_name:  # 训练模型通常没有冒号
@@ -553,13 +565,58 @@ def analyze_vulnerability(address):
         # 加载 feature 数据
         features = load_features()
         
-        # 使用核心分析函数
-        result_content = analyze_vulnerability_core(features, address=address, model_name=model_name)
-        
-        if result_content:
-            return jsonify({'result': result_content})
+        # 根据stream参数决定返回方式
+        if stream:
+            # 流式输出
+            def generate():
+                try:
+                    # 使用流式核心分析函数
+                    response_stream = analyze_vulnerability_core(
+                        features, 
+                        address=address, 
+                        model_name=model_name, 
+                        stream=True
+                    )
+                    
+                    # 对流式输出进行处理
+                    if response_stream:
+                        # 第一个事件
+                        yield 'data: {"event": "start"}\n\n'
+                        
+                        # 输出内容
+                        for chunk in response_stream:
+                            if 'message' in chunk and 'content' in chunk['message']:
+                                content = chunk['message']['content']
+                                if content:
+                                    # 使用Server-Sent Events格式
+                                    yield f'data: {json.dumps({"content": content})}\n\n'
+                        
+                        # 结束事件
+                        yield 'data: {"event": "end"}\n\n'
+                    else:
+                        yield 'data: {"error": "未获取到分析结果"}\n\n'
+                        
+                except Exception as e:
+                    print(f"流式分析过程中出错: {str(e)}")
+                    yield f'data: {{"error": "{str(e)}"}}\n\n'
+            
+            # 返回流式响应
+            return Response(
+                generate(),
+                mimetype='text/event-stream',
+                headers={
+                    'Cache-Control': 'no-cache',
+                    'X-Accel-Buffering': 'no'  # 禁用Nginx缓冲
+                }
+            )
         else:
-            return jsonify({'error': '未获取到分析结果'}), 500
+            # 非流式输出 - 原有的实现方式
+            result_content = analyze_vulnerability_core(features, address=address, model_name=model_name)
+            
+            if result_content:
+                return jsonify({'result': result_content})
+            else:
+                return jsonify({'error': '未获取到分析结果'}), 500
     except Exception as e:
         print(f"分析过程中出错: {str(e)}")
         return jsonify({'error': str(e)}), 500

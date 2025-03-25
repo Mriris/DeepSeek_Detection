@@ -54,6 +54,16 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- 添加流式输出选项 -->
+                    <div class="form-group w-100 mt-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="stream-output-toggle" checked>
+                            <label class="form-check-label" for="stream-output-toggle">
+                                启用流式输出 <small class="text-muted">(实时显示分析过程)</small>
+                            </label>
+                        </div>
+                    </div>
                 </form>
                 <!-- 按钮 -->
                 <div class="d-flex mt-3">
@@ -71,15 +81,11 @@
             </div>
 
         </div>
-        <!-- 加载动画 -->
-        <div id="loading-animation" style="display: none;">
-            <div class="spinner"></div>
-            <p style="font-size: 20px;; color: #0a53be">正在检测，请稍候...</p>
-        </div>
-        <!-- 显示检测结果 -->
-        <div id="detection-result" style="margin-top: 20px; color: #292d35;"></div>
-        <!-- 显示漏洞分析结果 -->
-        <div id="analysis-result" style="margin-top: 20px; color: #533981;"></div>
+        <!-- 漏洞检测结果区域 -->
+        <div id="detection-result" class="mb-5"></div>
+        
+        <!-- 漏洞分析结果占位区域 -->
+        <div id="vulnerability-analysis-placeholder"></div>
     </div>
 </section><!-- /Hero Section -->
 
@@ -166,7 +172,6 @@
         } else if (currentStep === 'detect') {
             // 如果选中了地址，调用漏洞分析
             if (selectedAddress) {
-                document.getElementById('loading-animation').style.display = 'block';
                 analyzeVulnerability(selectedAddress);
             }
         } else if (currentStep === 'reset') {
@@ -184,9 +189,9 @@
         const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
         console.log("选择使用模型:", selectedModel);
 
-        // 显示加载动画
-        document.getElementById('loading-animation').style.display = 'block';
-        document.getElementById('action-btn').disabled = true;  // 禁用按钮，防止重复点击
+        // 禁用按钮，防止重复点击
+        document.getElementById('action-btn').disabled = true;
+        document.getElementById('action-btn').textContent = '检测中...';
 
         fetch('/detect', {
             method: 'POST',
@@ -196,9 +201,8 @@
             .then(data => {
                 console.log("收到的完整数据:", data);
 
-                // 隐藏加载动画并启用按钮
-                document.getElementById('loading-animation').style.display = 'none';
-                document.getElementById('action-btn').disabled = false;  // 启用按钮
+                // 启用按钮
+                document.getElementById('action-btn').disabled = false;
 
                 if (data.error) {
                     console.error("错误:", data.error);
@@ -219,9 +223,9 @@
                 }
             })
             .catch(error => {
-                // 隐藏加载动画并启用按钮
-                document.getElementById('loading-animation').style.display = 'none';
-                document.getElementById('action-btn').disabled = false;  // 启用按钮
+                // 启用按钮
+                document.getElementById('action-btn').disabled = false;
+                document.getElementById('action-btn').textContent = '上传';
                 console.error('检测过程中出错:', error);
                 alert('检测过程中出错，请稍后再试');
             });
@@ -235,69 +239,297 @@
         const modelSelect = document.getElementById('model-select');
         const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
         console.log("使用模型:", selectedModel);
-
-        fetch(`/analyze/${address}?model_name=${selectedModel}`, {
-            method: 'GET'
-        })
-            .then(response => {
-                if (!response.ok) {
-                    // 如果状态码不是 200，抛出错误
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('loading-animation').style.display = 'none';
-                if (data.error) {
-                    console.error("分析失败:", data.error);
-                    alert("分析失败");
-                } else {
-                    console.log("分析结果:", data.result);
-                    // 直接处理模型返回的Markdown内容
-                    const markdownContent = data.result;
-                    
-                    // 预处理不再需要
-                    // const sections = processMarkdownContent(markdownContent);
-                    
-                    // 更新分析结果区域
-                    document.getElementById('analysis-result').innerHTML = `
-                    <section id="vulnerability-analysis" class="section light-background" data-aos="fade-up">
-                        <div class="container">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-10">
-                                    <!-- 标题部分 -->
-                                    <div class="text-center mb-5">
-                                        <h2 class="fw-bold" style="color: #37517e; margin-bottom: 20px;">
-                                            <i class="bi bi-shield-exclamation"></i> 漏洞分析结果
-                                        </h2>
-                                        <div class="divider-custom">
-                                            <div class="divider-custom-line"></div>
-                                            <div class="divider-custom-line"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- 分析结果卡片 -->
-                                    <div class="card mb-4 shadow-sm border-0">
-                                        <div class="card-body p-4">
-                                            ${marked(markdownContent)}
-                                        </div>
-                                        <div class="card-footer bg-light p-3">
-                                            <small class="text-muted">
-                                                <i class="bi bi-cpu"></i> 由 <strong>${selectedModel}</strong> 模型分析
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
+        
+        // 检查是否启用流式输出
+        const streamEnabled = document.getElementById('stream-output-toggle').checked;
+        console.log("流式输出状态:", streamEnabled ? "已启用" : "已禁用");
+        
+        // 显示分析中的加载动画
+        const resultSection = document.querySelector('#vulnerability-result');
+        
+        if (!resultSection) {
+            // 创建结果区域
+            const newSection = document.createElement('div');
+            newSection.id = 'vulnerability-result';
+            newSection.innerHTML = `
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary">
+                        <h3 class="m-0 text-white" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); color: #ffffff !important;">
+                            <i class="bi bi-shield-exclamation" style="color: #ffffff !important;"></i> 漏洞分析进行中...
+                        </h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">正在分析...</span>
                             </div>
                         </div>
-                    </section>
-                    `;
+                        <p class="text-center mt-3">正在分析漏洞，请稍候...</p>
+                        <div id="stream-output" class="mt-4" ${!streamEnabled ? 'style="display:none"' : ''}></div>
+                    </div>
+                </div>
+            `;
+            
+            // 将结果区域添加到页面
+            const resultPlaceholder = document.getElementById('vulnerability-analysis-placeholder');
+            if (resultPlaceholder) {
+                resultPlaceholder.appendChild(newSection);
+                // 滚动到结果区域
+                resultPlaceholder.scrollIntoView({ behavior: 'smooth' });
+            }
+        } else {
+            // 更新现有结果区域
+            resultSection.innerHTML = `
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary">
+                        <h3 class="m-0 text-white" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); color: #ffffff !important;">
+                            <i class="bi bi-shield-exclamation" style="color: #ffffff !important;"></i> 漏洞分析进行中...
+                        </h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">正在分析...</span>
+                            </div>
+                        </div>
+                        <p class="text-center mt-3">正在分析漏洞，请稍候...</p>
+                        <div id="stream-output" class="mt-4" ${!streamEnabled ? 'style="display:none"' : ''}></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 根据用户选择决定使用哪种API
+        if (streamEnabled) {
+            // 使用流式API
+            analyzeVulnerabilityStream(address, selectedModel);
+        } else {
+            // 使用非流式API
+            analyzeVulnerabilityNonStream(address, selectedModel);
+        }
+    }
+    
+    // 非流式分析函数
+    function analyzeVulnerabilityNonStream(address, selectedModel) {
+        fetch(`/analyze/${address}?model_name=${selectedModel}&stream=false`, {
+            method: 'GET'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error("分析失败:", data.error);
+                alert("分析失败: " + data.error);
+            } else {
+                console.log("分析结果:", data.result);
+                // 更新UI显示结果
+                updateAnalysisResult(data.result, selectedModel);
+            }
+        })
+        .catch(error => {
+            console.error("分析过程中出错:", error);
+            // 显示错误消息在结果区域
+            const streamOutput = document.getElementById('stream-output');
+            if (streamOutput) {
+                streamOutput.innerHTML = `<div class="alert alert-danger mt-3">分析过程中出错: ${error.message}</div>`;
+            }
+        });
+    }
+
+    function analyzeVulnerabilityStream(address, selectedModel) {
+        // 创建一个EventSource对象连接到流式API
+        const eventSource = new EventSource(`/analyze/${address}?model_name=${selectedModel}&stream=true`);
+        
+        // 存储累积的响应文本
+        let accumulatedText = '';
+        let lastChunk = '';  // 用于检测重复内容
+        let duplicateCounter = 0;  // 重复计数器
+        const streamOutput = document.getElementById('stream-output');
+        
+        // 处理来自服务器的消息
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                
+                // 检查是否是开始或结束事件
+                if (data.event === 'start') {
+                    console.log('分析开始');
+                    return;
+                } else if (data.event === 'end') {
+                    console.log('分析结束');
+                    eventSource.close();
+                    
+                    // 使用accumulated结果更新UI
+                    updateAnalysisResult(accumulatedText, selectedModel);
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error("分析时出错:", error);
-                alert("分析时出错，请稍后再试");
-            });
+                
+                // 处理内容更新
+                if (data.content) {
+                    // 检测重复内容
+                    if (data.content === lastChunk) {
+                        duplicateCounter++;
+                        
+                        // 如果重复次数超过阈值，关闭连接并显示警告
+                        if (duplicateCounter > 5) {
+                            console.warn('检测到重复内容，可能存在循环');
+                            eventSource.close();
+                            
+                            if (streamOutput) {
+                                streamOutput.innerHTML += `<div class="alert alert-warning mt-3">检测到重复内容，已停止接收</div>`;
+                            }
+                            
+                            // 尝试清理可能的重复内容
+                            accumulatedText = cleanupDuplicateContent(accumulatedText);
+                            
+                            // 显示已有内容
+                            updateAnalysisResult(accumulatedText, selectedModel);
+                            return;
+                        }
+                    } else {
+                        // 重置计数器并更新上一个块
+                        duplicateCounter = 0;
+                        lastChunk = data.content;
+                    }
+                    
+                    // 限制单次内容长度
+                    const contentToAdd = data.content.length > 1000 ? 
+                                         data.content.substring(0, 1000) + "..." : 
+                                         data.content;
+                    
+                    // 累积文本
+                    accumulatedText += contentToAdd;
+                    
+                    // 如果累积内容太长，进行截断
+                    if (accumulatedText.length > 10000) {
+                        accumulatedText = accumulatedText.substring(0, 10000) + 
+                                         "\n\n[内容已截断，过长的分析可能包含重复信息...]";
+                        
+                        // 关闭连接以防止进一步累积
+                        eventSource.close();
+                        
+                        if (streamOutput) {
+                            streamOutput.innerHTML += `<div class="alert alert-info mt-3">内容过长，已截断</div>`;
+                        }
+                        
+                        // 使用截断的内容更新结果
+                        updateAnalysisResult(accumulatedText, selectedModel);
+                        return;
+                    }
+                    
+                    // 更新流式输出区域
+                    if (streamOutput) {
+                        // 尝试解析为Markdown并显示
+                        try {
+                            streamOutput.innerHTML = marked.parse(accumulatedText);
+                        } catch (e) {
+                            // 如果解析失败，直接显示文本
+                            streamOutput.textContent = accumulatedText;
+                        }
+                        
+                        // 滚动到底部
+                        streamOutput.scrollTop = streamOutput.scrollHeight;
+                    }
+                }
+            } catch (e) {
+                console.error('解析事件数据失败:', e, event.data);
+            }
+        };
+        
+        // 处理错误
+        eventSource.onerror = function(error) {
+            console.error('EventSource 错误:', error);
+            eventSource.close();
+            
+            // 显示错误消息
+            if (streamOutput) {
+                streamOutput.innerHTML += `<div class="alert alert-danger mt-3">分析过程中出错，连接已关闭</div>`;
+            }
+            
+            // 如果有足够的累积文本，仍然显示结果
+            if (accumulatedText.length > 50) {
+                updateAnalysisResult(accumulatedText, selectedModel);
+            }
+        };
+    }
+    
+    // 清理重复内容的函数
+    function cleanupDuplicateContent(text) {
+        // 尝试查找并删除多次重复的模式
+        const lines = text.split('\n');
+        const uniqueLines = [];
+        const seenPatterns = new Set();
+        
+        for (let i = 0; i < lines.length; i++) {
+            // 检查这一行是否是前面已经出现过多次的模式
+            const line = lines[i].trim();
+            
+            // 跳过空行
+            if (!line) {
+                uniqueLines.push(lines[i]);
+                continue;
+            }
+            
+            // 检查该行是否与大量已有行重复
+            const similarLines = uniqueLines.filter(existingLine => 
+                existingLine.trim() === line || 
+                (line.length > 10 && existingLine.includes(line))
+            );
+            
+            if (similarLines.length < 3) {  // 允许最多出现3次
+                uniqueLines.push(lines[i]);
+            } else if (!seenPatterns.has(line)) {
+                uniqueLines.push(lines[i]);
+                uniqueLines.push("...[重复内容已省略]...");
+                seenPatterns.add(line);
+            }
+        }
+        
+        return uniqueLines.join('\n');
+    }
+
+    function updateAnalysisResult(markdownContent, selectedModel) {
+        // 将流式输出结果转换为最终分析结果
+        const resultSection = document.querySelector('#vulnerability-result');
+        if (!resultSection) return;
+        
+        
+        resultSection.innerHTML = `
+        <section id="vulnerability-analysis" class="section light-background" data-aos="fade-up">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <!-- 标题部分 -->
+                        <div class="text-center mb-5">
+                            <h2 class="fw-bold" style="color: #37517e; margin-bottom: 20px;">
+                                <i class="bi bi-shield-exclamation"></i> 漏洞分析结果
+                            </h2>
+                            <div class="divider-custom">
+                                <div class="divider-custom-line"></div>
+                                <div class="divider-custom-line"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 分析结果卡片 -->
+                        <div class="card mb-4 shadow-sm border-0">
+                            <div class="card-body p-4">
+                                ${marked.parse(markdownContent)}
+                            </div>
+                            <div class="card-footer bg-light p-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-cpu"></i> 由 <strong>${selectedModel}</strong> 模型分析
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        `;
     }
 
     // 处理Markdown内容，将其分解为不同的部分
