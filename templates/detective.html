@@ -253,24 +253,11 @@
                     alert("分析失败");
                 } else {
                     console.log("分析结果:", data.result);
-                    // 提取 <think> 和外部 Markdown 内容
-                    let resultContent = data.result;
-                    let thinkStartIndex = resultContent.indexOf('<think>');
-                    let thinkEndIndex = resultContent.indexOf('</think>');
-
-                    // 提取 think 内容
-                    let thinkContent = '';
-                    let markdownContent = '';
-
-                    if (thinkStartIndex !== -1 && thinkEndIndex !== -1) {
-                        thinkContent = resultContent.slice(thinkStartIndex + 7, thinkEndIndex); // 去除 <think> 和 </think>
-                        markdownContent = resultContent.slice(thinkEndIndex + 8).trim(); // 获取 think 后面的内容
-                    } else {
-                        markdownContent = resultContent; // 如果没有 <think> 标签，直接显示结果
-                    }
-
-                    // 预处理markdown内容，分离不同部分
-                    const sections = processMarkdownContent(markdownContent);
+                    // 直接处理模型返回的Markdown内容
+                    const markdownContent = data.result;
+                    
+                    // 预处理不再需要
+                    // const sections = processMarkdownContent(markdownContent);
                     
                     // 更新分析结果区域
                     document.getElementById('analysis-result').innerHTML = `
@@ -285,43 +272,16 @@
                                         </h2>
                                         <div class="divider-custom">
                                             <div class="divider-custom-line"></div>
-                                            <div class="divider-custom-icon"><i class="bi bi-code-slash"></i></div>
                                             <div class="divider-custom-line"></div>
                                         </div>
                                     </div>
                                     
-                                    <!-- 概述卡片 -->
+                                    <!-- 分析结果卡片 -->
                                     <div class="card mb-4 shadow-sm border-0">
-                                        <div class="card-header bg-primary text-white py-3">
-                                            <h3 class="m-0 fw-bold"><i class="bi bi-info-circle"></i> 漏洞概述</h3>
-                                        </div>
                                         <div class="card-body p-4">
-                                            <div class="vulnerability-summary">
-                                                ${sections.summary || ''}
-                                            </div>
+                                            ${marked(markdownContent)}
                                         </div>
-                                    </div>
-                                    
-                                    <!-- 漏洞详情卡片组 -->
-                                    <div id="vulnerability-details">
-                                        ${sections.details}
-                                    </div>
-                                    
-                                    <!-- 修复建议卡片 -->
-                                    <div class="card mb-4 shadow-sm border-0">
-                                        <div class="card-header bg-success text-white py-3">
-                                            <h3 class="m-0 fw-bold"><i class="bi bi-wrench"></i> 修复建议</h3>
-                                        </div>
-                                        <div class="card-body p-4">
-                                            <div class="solution">
-                                                ${sections.solution || '未提供修复建议'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- 分析模型信息 -->
-                                    <div class="card mb-4 shadow-sm border-0 bg-light">
-                                        <div class="card-body p-3">
+                                        <div class="card-footer bg-light p-3">
                                             <small class="text-muted">
                                                 <i class="bi bi-cpu"></i> 由 <strong>${selectedModel}</strong> 模型分析
                                             </small>
@@ -342,113 +302,8 @@
 
     // 处理Markdown内容，将其分解为不同的部分
     function processMarkdownContent(markdown) {
-        // 默认结果结构
-        const result = {
-            summary: '',
-            details: '',
-            solution: ''
-        };
-        
-        try {
-            // 处理漏洞详情部分 - 提取指令和相关信息
-            const instructionBlocks = [];
-            const instructionRegex = /指令\s+\d+:\s+([^\n]+)(?:[\s\S]*?)(?=指令\s+\d+:|$)/g;
-            let match;
-            
-            while ((match = instructionRegex.exec(markdown)) !== null) {
-                const block = match[0];
-                
-                // 提取问题(Issue)
-                let issue = '';
-                const issueMatch = block.match(/Issue:\s*([^\n]+)/);
-                if (issueMatch) issue = issueMatch[1];
-                
-                // 提取优先级(Priority)
-                let priority = '';
-                let priorityClass = 'bg-info'; // 默认颜色
-                const priorityMatch = block.match(/Priority:\s*([^\n]+)/);
-                if (priorityMatch) {
-                    priority = priorityMatch[1].trim();
-                    if (priority.toLowerCase().includes('high')) {
-                        priorityClass = 'bg-danger';
-                    } else if (priority.toLowerCase().includes('medium')) {
-                        priorityClass = 'bg-warning';
-                    } else if (priority.toLowerCase().includes('low')) {
-                        priorityClass = 'bg-success';
-                    }
-                }
-                
-                // 提取潜在漏洞(Potential Vulnerability)
-                let vulnerability = '';
-                const vulnMatch = block.match(/Potential Vulnerability:\s*([^\n]+[\s\S]*?)(?=\s*Issue:|Priority:|$)/);
-                if (vulnMatch) vulnerability = vulnMatch[1];
-                
-                // 构建卡片HTML
-                instructionBlocks.push(`
-                    <div class="card mb-4 shadow-sm border-0 instruction-card">
-                        <div class="card-header ${priorityClass}">
-                            <h4 class="m-0 d-flex align-items-center">
-                                <i class="bi bi-exclamation-triangle me-2 text-white"></i> 
-                                <span class="instruction-title text-white" style="text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${match[1]}</span>
-                                <span class="ms-auto badge bg-light text-dark" style="font-weight: 700;">${priority}</span>
-                            </h4>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="mb-3">
-                                <h5 class="text-danger fw-bold">
-                                    <i class="bi bi-bug"></i> 问题
-                                </h5>
-                                <p class="text-dark fw-medium">${issue}</p>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <h5 class="text-primary fw-bold">
-                                    <i class="bi bi-shield"></i> 潜在漏洞
-                                </h5>
-                                <p class="text-dark fw-medium">${vulnerability}</p>
-                            </div>
-                        </div>
-                    </div>
-                `);
-            }
-            
-            // 组合所有指令块
-            result.details = instructionBlocks.join('');
-            if (!result.details) {
-                // 如果没有提取到结构化内容，使用标准markdown渲染
-                result.details = `
-                <div class="card mb-4 shadow-sm border-0">
-                    <div class="card-header bg-info text-white py-3">
-                        <h3 class="m-0 fw-bold"><i class="bi bi-list-ul"></i> 详细分析</h3>
-                    </div>
-                    <div class="card-body p-4">
-                        ${marked(markdown)}
-                    </div>
-                </div>`;
-            }
-            
-            // 提取总结/概述（假设是markdown开头的部分，直到第一个"指令"出现）
-            const summaryMatch = markdown.match(/^([\s\S]*?)(?=指令\s+\d+:|$)/);
-            if (summaryMatch && summaryMatch[1].trim()) {
-                result.summary = marked(summaryMatch[1]);
-            }
-            
-            // 提取解决方案（假设在最后一个instruction后，或包含"解决方案"/"修复建议"等关键词的段落）
-            const solutionMatch = markdown.match(/(?:解决方案|修复建议|建议|解决办法)([\s\S]*?)$/i);
-            if (solutionMatch) {
-                result.solution = marked(solutionMatch[1] || solutionMatch[0]);
-            }
-            
-            return result;
-        } catch(e) {
-            console.error("处理Markdown内容时出错:", e);
-            // 发生错误时，返回原始markdown内容
-            return {
-                summary: '',
-                details: `<div class="card mb-4"><div class="card-body">${marked(markdown)}</div></div>`,
-                solution: ''
-            };
-        }
+        // 直接返回空对象，因为我们不再需要分离不同部分
+        return {};
     }
 
     function displayResults(data) {

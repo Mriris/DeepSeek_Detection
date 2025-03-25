@@ -175,41 +175,106 @@ def get_all_available_models():
     return base_model_list + trained_model_list
 
 
+# 核心漏洞分析函数
+def analyze_vulnerability_core(features, address=None, model_name=DEFAULT_MODEL):
+    """
+    执行漏洞分析的核心逻辑
+    
+    Args:
+        features (dict): 包含all_instructions和priority_instructions的特征数据
+        address (str, optional): 特定指令的地址。如果为None，使用第一个优先级指令
+        model_name (str, optional): 使用的模型名称
+    
+    Returns:
+        str: 分析结果文本，或者None如果分析失败
+    """
+    try:
+        # 查找风险指令
+        highest_priority_instruction = None
+        instruction_index = -1
+        
+        if address:
+            # 如果提供了特定地址，查找对应的指令
+            for instruction in features['priority_instructions']:
+                if instruction['address'] == address:
+                    highest_priority_instruction = instruction
+                    break
+                    
+            if not highest_priority_instruction:
+                print(f"未找到地址为 {address} 的风险指令")
+                return None
+                
+            # 获取指令在all_instructions中的索引
+            instruction_index = next(
+                (i for i, instr in enumerate(features['all_instructions']) if instr['address'] == address),
+                -1
+            )
+        else:
+            # 使用第一个优先级指令
+            if features['priority_instructions']:
+                highest_priority_instruction = features['priority_instructions'][0]
+                # 找到这个指令在all_instructions中的索引
+                for i, instruction in enumerate(features['all_instructions']):
+                    if instruction['address'] == highest_priority_instruction['address']:
+                        instruction_index = i
+                        break
+        
+        if highest_priority_instruction is None or instruction_index == -1:
+            print("没有找到匹配的风险指令！")
+            return None
+            
+        # 获取上下文指令
+        previous_instructions, next_instructions = get_context_instructions(
+            instruction_index, 
+            features['all_instructions'],
+            context_range=10
+        )
+
+        # 转换指令格式
+        previous_instructions = [instr['instruction'] for instr in previous_instructions]
+        next_instructions = [instr['instruction'] for instr in next_instructions]
+        
+        # 生成提示词
+        message_content = build_vulnerability_prompt(
+            highest_priority_instruction, 
+            previous_instructions, 
+            next_instructions
+        )
+
+        print(f"使用模型: {model_name} 进行分析")
+        
+        # 调用模型进行分析
+        response = ollama.chat(model=model_name, messages=[{'role': 'user', 'content': message_content}])
+
+        if 'message' in response:
+            result_content = response['message']['content']
+            print(result_content)
+            return result_content
+        
+        return None
+    except Exception as e:
+        print(f"分析过程中出错: {str(e)}")
+        return None
+
+
 # 加载 DeepSeek 模型并获取漏洞检测结果
 def load_model(features_file, model_name=None):
+    """
+    加载特征文件并分析其中的漏洞
+    """
     if not model_name:
         model_name = DEFAULT_MODEL
 
-    with open(features_file, 'r') as f:
-        features = json.load(f)
-
-    highest_priority_instruction = None
-    instruction_index = -1
-
-    for i, instruction in enumerate(features['all_instructions']):
-        if instruction['address'] == features['priority_instructions'][0]['address']:
-            highest_priority_instruction = features['priority_instructions'][0]
-            instruction_index = i
-            break
-
-    if highest_priority_instruction is None:
-        print("没有找到匹配的风险指令！")
+    # 读取特征文件
+    try:
+        with open(features_file, 'r') as f:
+            features = json.load(f)
+            
+        # 使用核心分析函数
+        return analyze_vulnerability_core(features, address=None, model_name=model_name)
+    except Exception as e:
+        print(f"加载模型时出错: {str(e)}")
         return None
-
-    previous_instructions, next_instructions = get_context_instructions(instruction_index, features['all_instructions'],
-                                                                        context_range=10)
-
-    previous_instructions = [instr['instruction'] for instr in previous_instructions]
-    next_instructions = [instr['instruction'] for instr in next_instructions]
-
-    message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
-
-    print(f"使用模型: {model_name} 进行分析")
-    response = ollama.chat(model=model_name, messages=[{'role': 'user', 'content': message_content}])
-
-    if 'message' in response:
-        return response['message']['content']
-    return None
 
 
 # 获取上下文指令（前文和后文）
@@ -221,6 +286,12 @@ def get_context_instructions(instruction_index, all_instructions, context_range=
     next_instructions = all_instructions[instruction_index + 1:end_index]
 
     return previous_instructions, next_instructions
+
+
+# 构建漏洞检测提示词
+def build_vulnerability_prompt(instruction, previous_instructions, next_instructions):
+    """构建用于漏洞检测的提示词"""
+    return f"请检测以下特征(汇编指令)的潜在漏洞，用中文进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{instruction['instruction']}\", \"issue_name\": \"{instruction['issue_name']}\", \"priority\": \"{instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
 
 
 # 文件保存时重命名为 'Application' 并保留扩展名
@@ -481,41 +552,14 @@ def analyze_vulnerability(address):
 
         # 加载 feature 数据
         features = load_features()
-
-        # 查找风险指令
-        highest_priority_instruction = None
-        for instruction in features['priority_instructions']:
-            if instruction['address'] == address:
-                highest_priority_instruction = instruction
-                break
-        print(f"找到的风险指令: {highest_priority_instruction}")  # 输出找到的风险指令
-        if not highest_priority_instruction:
-            return jsonify({'error': '未找到匹配的风险指令'}), 404
-
-        # 获取上下文指令
-        instruction_index = next(
-            i for i, instr in enumerate(features['all_instructions']) if instr['address'] == address)
-        previous_instructions, next_instructions = get_context_instructions(instruction_index,
-                                                                            features['all_instructions'],
-                                                                            context_range=10)
-
-        # 生成消息内容
-        previous_instructions = [instr['instruction'] for instr in previous_instructions]
-        next_instructions = [instr['instruction'] for instr in next_instructions]
-        message_content = f"请检测以下特征(汇编指令)的潜在漏洞，进行描述并提出解决方案。特征数据：\n风险指令：{{\"instruction\": \"{highest_priority_instruction['instruction']}\", \"issue_name\": \"{highest_priority_instruction['issue_name']}\", \"priority\": \"{highest_priority_instruction['priority']}\"}}\n上文指令：{json.dumps(previous_instructions)}\n下文指令：{json.dumps(next_instructions)}"
-
-        print(f"生成的消息内容: {message_content}")  # 输出生成的消息内容
-        print(f"使用模型: {model_name} 进行分析")
-
-        # 调用模型进行分析
-        response = ollama.chat(model=model_name, messages=[{'role': 'user', 'content': message_content}])
-
-        if 'message' in response:
-            result_content = response['message']['content']
-            print(result_content)
+        
+        # 使用核心分析函数
+        result_content = analyze_vulnerability_core(features, address=address, model_name=model_name)
+        
+        if result_content:
             return jsonify({'result': result_content})
-
-        return jsonify({'error': '未获取到分析结果'}), 500
+        else:
+            return jsonify({'error': '未获取到分析结果'}), 500
     except Exception as e:
         print(f"分析过程中出错: {str(e)}")
         return jsonify({'error': str(e)}), 500
