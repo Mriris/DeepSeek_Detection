@@ -154,6 +154,9 @@
     let resultData = [];  // 用于保存检测结果数据
     let dangerLevelData = []; // 用于保存危险程度数据
     
+    // 添加全局思考耗时变量
+    let thinkDurationSeconds = null;
+    
     // 刷新模型列表
     function refreshModelsList() {
         const refreshBtn = document.getElementById('refresh-models-btn');
@@ -300,6 +303,9 @@
         const streamEnabled = document.getElementById('stream-output-toggle').checked;
         console.log("流式输出状态:", streamEnabled ? "已启用" : "已禁用");
         
+        // 重置思考耗时变量
+        thinkDurationSeconds = null;
+        
         // 显示分析中的加载动画
         const resultSection = document.querySelector('#vulnerability-result');
         
@@ -413,6 +419,9 @@
         let normalContent = '';
         let thinkStartIndex = -1;
         
+        // 使用全局变量，不需要重新声明
+        // let thinkDurationSeconds = null;
+        
         // 添加统一样式类到流式输出容器
         if (streamOutput) {
             streamOutput.classList.add('analysis-content');
@@ -507,9 +516,16 @@
                         normalContent = fullText.substring(0, thinkStartIndex);
                         const afterThink = fullText.substring(endTagIndex + 8);
                         
+                        // 计算思考耗时并保存到变量中
+                        if (thinkStartTime) {
+                            const thinkEndTime = new Date();
+                            thinkDurationSeconds = (thinkEndTime - thinkStartTime) / 1000; // 秒
+                            // 只记录耗时信息用于显示，但不添加到文本内容中
+                        }
+                        
                         // 重置思考状态
                         isThinking = false;
-                        console.log('思考结束');
+                        console.log('思考结束，耗时：' + thinkDurationSeconds + '秒');
                     }
                     
                     // 如果累积内容太长，进行截断
@@ -544,29 +560,30 @@
                         
                         // 如果在思考模式中，添加思考区域
                         if (isThinking || thinkContent) {
-                            // 获取思考内容的最后一行
+                            // 获取思考内容的最后一行（保留最后一条思考内容作为摘要）
                             const thinkLines = thinkContent.split('\n').filter(line => line.trim());
                             const lastThinkLine = thinkLines.length > 0 ? thinkLines[thinkLines.length - 1] : '';
                             const thinkCompleted = !isThinking;
                             
                             // 思考时间信息
                             let thinkTimeText = '';
-                            if (thinkCompleted && thinkStartTime) {
-                                const thinkEndTime = new Date();
-                                const thinkDuration = (thinkEndTime - thinkStartTime) / 1000; // 秒
-                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDuration.toFixed(2)}秒，共${thinkLines.length}行</small></div>`;
+                            if (thinkCompleted && thinkDurationSeconds !== null) {
+                                // 使用保存的耗时变量
+                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDurationSeconds.toFixed(2)}秒</small></div>`;
                             } else if (isThinking) {
-                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考中...</small></div>`;
+                                let thinkingTime = 0;
+                                if (thinkStartTime) {
+                                    const now = new Date();
+                                    thinkingTime = (now - thinkStartTime) / 1000;
+                                }
+                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考中...${thinkingTime.toFixed(1)}秒</small></div>`;
                             }
                             
-                            // 添加思考部分
+                            // 添加思考部分 - 流式输出过程中不显示按钮
                             html += `
                                 <div class="think-container my-3 border-start border-primary ps-3">
                                     <div class="think-header d-flex align-items-center">
                                         <h5 class="mb-2 text-primary"><i class="bi bi-lightbulb"></i> 模型思考过程</h5>
-                                        <button class="btn btn-sm ms-2 think-toggle-btn" title="展开/折叠思考内容">
-                                            <i class="bi bi-chevron-down"></i>
-                                        </button>
                                     </div>
                                     
                                     <div class="think-summary mb-2">
@@ -612,23 +629,6 @@
                         
                         // 滚动到底部
                         streamOutput.scrollTop = streamOutput.scrollHeight;
-                        
-                        // 添加事件监听器到展开/折叠按钮
-                        const toggleBtn = streamOutput.querySelector('.think-toggle-btn');
-                        if (toggleBtn) {
-                            toggleBtn.onclick = function() {
-                                const thinkDetails = document.querySelector('.think-details');
-                                const isExpanded = thinkDetails.style.display !== 'none';
-                                
-                                // 切换显示状态
-                                thinkDetails.style.display = isExpanded ? 'none' : 'block';
-                                
-                                // 更新按钮图标
-                                this.innerHTML = isExpanded ? 
-                                    '<i class="bi bi-chevron-down"></i>' : 
-                                    '<i class="bi bi-chevron-up"></i>';
-                            };
-                        }
                     }
                 }
             } catch (e) {
@@ -783,14 +783,29 @@
             thinkContent = content.substring(thinkStartIndex + 7);
         }
         
-        // 获取思考内容的最后一行
+        // 获取思考内容的最后一行（保留最后一条思考内容作为摘要）
         const thinkLines = thinkContent.split('\n').filter(line => line.trim());
         const lastThinkLine = thinkLines.length > 0 ? thinkLines[thinkLines.length - 1] : '';
         
-        // 计算思考完成状态和信息
+        // 计算思考完成状态
         const isThinkingComplete = thinkEndIndex !== -1;
-        const thinkTimeText = thinkLines.length > 0 ? 
-            `<div class="think-time mt-2 mb-2 text-muted"><small>${isThinkingComplete ? '思考完成' : '思考中...'}，共${thinkLines.length}行</small></div>` : '';
+        
+        // 提取思考时间从文本中
+        let thinkTimeText = '';
+        
+        // 使用全局变量显示耗时
+        if (thinkDurationSeconds !== null) {
+            thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDurationSeconds.toFixed(2)}秒</small></div>`;
+        } else {
+            // 兼容方式：从文本中提取思考时间
+            const thinkTimeMatch = content.match(/思考完成，耗时: (\d+\.\d+)秒/);
+            if (thinkTimeMatch && thinkTimeMatch[1]) {
+                const thinkDuration = parseFloat(thinkTimeMatch[1]);
+                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDuration.toFixed(2)}秒</small></div>`;
+            } else {
+                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>${isThinkingComplete ? '思考完成' : '思考中...'}</small></div>`;
+            }
+        }
         
         // 构建HTML
         let html = '';
@@ -804,7 +819,7 @@
             }
         }
         
-        // 添加思考部分
+        // 添加思考部分 - 在最终结果中显示展开按钮
         html += `
             <div class="think-container my-3 border-start border-primary ps-3">
                 <div class="think-header d-flex align-items-center">
