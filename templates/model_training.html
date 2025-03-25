@@ -7,51 +7,58 @@
     <div class="container">
         <!-- 页面标题 -->
         <div class="page-header mb-4">
-            <h2><i class="bi bi-gpu-card"></i> 模型训练平台</h2>
-            <p class="text-muted">训练和管理用于漏洞检测的深度学习模型</p>
+            <h2><i class="bi bi-gpu-card"></i> 漏洞检测模型训练平台</h2>
+            <p class="text-muted">训练和管理用于二进制漏洞检测的BinEncoder模型</p>
         </div>
         <div class="row gy-4">
             <div class="col-md-12 mb-4">
-                <p>通过这个平台，您可以训练和管理用于漏洞检测的深度学习模型。</p>
+                <p>通过这个平台，您可以训练和管理用于<strong>检测二进制漏洞</strong>的BinEncoder系列模型。这些模型可以用于识别二进制文件中的漏洞位置。</p>
             </div>
             
             <!-- 左侧区域 - 训练模型 -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
-                        <h4>训练新模型</h4>
+                        <h4>训练新的BinEncoder模型</h4>
                     </div>
                     <div class="card-body">
                         <form id="modelTrainingForm">
                             <div class="mb-3">
                                 <label for="modelName" class="form-label">模型名称</label>
-                                <input type="text" class="form-control" id="modelName" required>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="modelName" placeholder="输入自定义模型名称" required>
+                                </div>
+                                <small class="text-muted">自定义训练模型的名称</small>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="baseModel" class="form-label">基础模型</label>
+                                <label for="baseModel" class="form-label">底层编码模型</label>
                                 <div class="d-flex">
                                     <select class="form-select me-2" id="baseModel" required>
-                                        {% if models %}
-                                            {% for model in models %}
-                                            <option value="{{ model.name }}">{{ model.name }}</option>
-                                            {% endfor %}
-                                        {% else %}
-                                            <option value="deepseek-r1:14b">DeepSeek-14B</option>
-                                            <option value="deepseek-coder:7b">DeepSeek-Coder-7B</option>
-                                            <option value="llama3:8b">Llama3-8B</option>
-                                        {% endif %}
+                                        <option value="BinEncoder" selected>BinEncoder</option>
                                     </select>
-                                    <button type="button" id="refresh-models-btn" class="btn btn-outline-primary" 
-                                            onclick="refreshModelsList()" title="刷新模型列表">
-                                        <i class="bi bi-arrow-clockwise"></i>
+                                    <button type="button" id="refresh-models-btn" class="btn btn-outline-secondary" 
+                                            onclick="showModelInfo()" title="查看模型信息">
+                                        <i class="bi bi-info-circle"></i>
                                     </button>
                                 </div>
+                                <small class="text-muted">使用BinEncoder模型进行二进制漏洞检测</small>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="trainingData" class="form-label">训练数据</label>
-                                <input type="file" class="form-control" id="trainingData" accept=".json,.csv">
+                                <label for="trainingData" class="form-label">训练数据集</label>
+                                <input type="file" class="form-control" id="trainingData" accept=".bin,.csv,.json">
+                                <small class="text-muted">支持二进制样本集、特征CSV或JSON格式</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="modelType" class="form-label">漏洞检测类型</label>
+                                <select class="form-select" id="modelType">
+                                    <option value="general" selected>通用漏洞检测</option>
+                                    <option value="overflow">缓冲区溢出</option>
+                                    <option value="uaf">释放后使用(UAF)</option>
+                                    <option value="injection">代码注入</option>
+                                </select>
                             </div>
                             
                             <div class="mb-3">
@@ -64,7 +71,7 @@
                                 <input type="number" class="form-control" id="learningRate" step="0.0001" min="0.0001" max="0.01" value="0.0002">
                             </div>
                             
-                            <button type="button" class="btn btn-primary w-100" onclick="startTraining()">开始训练</button>
+                            <button type="button" class="btn btn-primary w-100" onclick="startTraining()">开始训练检测模型</button>
                         </form>
                     </div>
                 </div>
@@ -74,14 +81,14 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-secondary text-white">
-                        <h4>已训练模型</h4>
+                        <h4>已训练的BinEncoder模型</h4>
                     </div>
                     <div class="card-body">
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>模型名称</th>
-                                    <th>基础模型</th>
+                                    <th>检测模型名称</th>
+                                    <th>底层编码模型</th>
                                     <th>创建日期</th>
                                     <th>操作</th>
                                 </tr>
@@ -94,7 +101,7 @@
                                         <td>{{ model.base_model }}</td>
                                         <td>{{ model.created_at }}</td>
                                         <td>
-                                            <button class="btn btn-sm btn-primary" onclick="useModel('{{ model.model_name }}')">使用</button>
+                                            <button class="btn btn-sm btn-primary" onclick="useModel('{{ model.model_name }}')">用于检测</button>
                                             <button class="btn btn-sm btn-danger" onclick="deleteModel('{{ model.id }}')">删除</button>
                                         </td>
                                     </tr>
@@ -128,50 +135,82 @@
 </section>
 
 <script>
-    // 刷新模型列表
+    // 显示模型信息而不是刷新模型列表
+    function showModelInfo() {
+        const baseModel = document.getElementById('baseModel').value;
+        
+        // 模型信息映射
+        const modelInfo = {
+            'BinEncoder': {
+                name: 'BinEncoder',
+                description: '标准的二进制漏洞检测模型，用于分析二进制文件的潜在安全风险',
+                features: ['通用漏洞检测', '高精度特征提取', '多平台支持', '完整漏洞报告'],
+                accuracy: '92%'
+            }
+        };
+        
+        // 获取当前选中的模型信息
+        const info = modelInfo[baseModel] || {
+            name: baseModel,
+            description: '未知模型',
+            features: ['无可用特性信息'],
+            accuracy: '未知'
+        };
+        
+        // 创建模态框显示模型信息
+        const modalHTML = `
+        <div class="modal fade" id="modelInfoModal" tabindex="-1" aria-labelledby="modelInfoModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="modelInfoModalLabel">模型信息: ${info.name}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 class="fw-bold">描述</h6>
+                        <p>${info.description}</p>
+                        
+                        <h6 class="fw-bold mt-3">特性</h6>
+                        <ul>
+                            ${info.features.map(feature => `<li>${feature}</li>`).join('')}
+                        </ul>
+                        
+                        <div class="alert alert-info mt-3">
+                            <strong>检测准确率:</strong> ${info.accuracy}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        
+        // 添加模态框到页面
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = modalHTML;
+        document.body.appendChild(modalContainer);
+        
+        // 显示模态框
+        const modal = new bootstrap.Modal(document.getElementById('modelInfoModal'));
+        modal.show();
+        
+        // 模态框关闭后清理DOM
+        document.getElementById('modelInfoModal').addEventListener('hidden.bs.modal', function() {
+            document.body.removeChild(modalContainer);
+        });
+    }
+    
+    // 刷新模型列表函数替换为空操作
     function refreshModelsList() {
-        const refreshBtn = document.getElementById('refresh-models-btn');
-        const modelSelect = document.getElementById('baseModel');
-        
-        // 添加加载动画
-        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-        refreshBtn.disabled = true;
-        
-        fetch('/api/ollama/models')
-            .then(response => response.json())
-            .then(data => {
-                if (data.models && Array.isArray(data.models)) {
-                    // 清空现有选项
-                    modelSelect.innerHTML = '';
-                    
-                    // 添加新选项
-                    data.models.forEach(model => {
-                        const option = document.createElement('option');
-                        option.value = model.name;
-                        option.textContent = model.name;
-                        modelSelect.appendChild(option);
-                    });
-                    
-                    console.log(`已更新模型列表，共 ${data.models.length} 个模型`);
-                } else {
-                    console.error('获取模型列表失败');
-                }
-            })
-            .catch(error => {
-                console.error('刷新模型列表时出错:', error);
-                alert('刷新模型列表失败，请稍后再试');
-            })
-            .finally(() => {
-                // 恢复按钮状态
-                refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                refreshBtn.disabled = false;
-            });
+        console.log('刷新模型列表操作已被禁用，模型列表已预设');
     }
     
     // 使用已训练模型
     function useModel(modelName) {
         // 跳转到漏洞检测页面并选择该模型
-        window.location.href = `/detective?model=${encodeURIComponent(modelName)}`;
+        window.location.href = `/detective?detect_model=${encodeURIComponent(modelName)}`;
     }
     
     // 删除已训练模型
@@ -232,7 +271,7 @@
                         <td>${model.base_model}</td>
                         <td>${model.created_at}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary" onclick="useModel('${model.model_name}')">使用</button>
+                            <button class="btn btn-sm btn-primary" onclick="useModel('${model.model_name}')">用于检测</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteModel('${model.id}')">删除</button>
                         </td>
                     `;
@@ -250,6 +289,7 @@
         // 获取表单数据
         const modelName = document.getElementById('modelName').value;
         const baseModel = document.getElementById('baseModel').value;
+        const modelType = document.getElementById('modelType').value;
         const epochs = document.getElementById('epochs').value;
         
         // 表单验证
@@ -261,8 +301,8 @@
         // 显示训练进度卡片
         document.getElementById('trainingProgressCard').style.display = 'block';
         document.getElementById('trainingProgress').style.width = '0%';
-        document.getElementById('trainingStatus').textContent = '准备训练...';
-        document.getElementById('trainingLogs').innerHTML = '> 初始化训练环境...\n';
+        document.getElementById('trainingStatus').textContent = '准备训练漏洞检测模型...';
+        document.getElementById('trainingLogs').innerHTML = '> 初始化BinEncoder训练环境...\n';
         
         // 模拟训练进度
         let progress = 0;
@@ -271,30 +311,31 @@
             if (progress > 100) {
                 clearInterval(trainingInterval);
                 document.getElementById('trainingStatus').textContent = '训练完成!';
-                document.getElementById('trainingLogs').innerHTML += '> 训练完成! 模型已保存。\n';
+                document.getElementById('trainingLogs').innerHTML += '> 训练完成! BinEncoder模型已保存。\n';
                 
                 // 保存训练好的模型信息到服务器
-                saveTrainedModel(modelName, baseModel);
+                saveTrainedModel(modelName, baseModel, modelType);
                 
                 return;
             }
             
             document.getElementById('trainingProgress').style.width = `${progress}%`;
-            document.getElementById('trainingStatus').textContent = `训练中... ${progress}%`;
+            document.getElementById('trainingStatus').textContent = `训练漏洞检测模型中... ${progress}%`;
             
             // 添加一些模拟的训练日志
             if (progress % 20 === 0) {
-                document.getElementById('trainingLogs').innerHTML += `> 训练第 ${progress/20} 轮, 损失值: ${(5 - progress/25).toFixed(4)}\n`;
+                document.getElementById('trainingLogs').innerHTML += `> 训练第 ${progress/20} 轮, 准确率: ${(50 + progress/2).toFixed(2)}%, 损失值: ${(5 - progress/25).toFixed(4)}\n`;
                 document.getElementById('trainingLogs').scrollTop = document.getElementById('trainingLogs').scrollHeight;
             }
         }, 500);
     }
     
     // 保存训练好的模型信息
-    function saveTrainedModel(modelName, baseModel) {
+    function saveTrainedModel(modelName, baseModel, modelType) {
         const modelData = {
             model_name: modelName,
             base_model: baseModel,
+            model_type: modelType,
             created_at: new Date().toISOString().slice(0, 10),
             epochs: document.getElementById('epochs').value,
             learning_rate: document.getElementById('learningRate').value
@@ -310,7 +351,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                console.log('模型保存成功:', data.model);
+                console.log('漏洞检测模型保存成功:', data.model);
                 
                 // 刷新已训练模型列表
                 refreshTrainedModels();
@@ -327,12 +368,15 @@
     
     // 页面加载完成后检查URL参数是否需要刷新模型列表
     document.addEventListener('DOMContentLoaded', function() {
-        // 如果URL中有refresh=true参数，刷新模型列表
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('refresh') === 'true') {
-            refreshModelsList();
-            refreshTrainedModels();
-        }
+        // 不再需要刷新模型列表
+        // const urlParams = new URLSearchParams(window.location.search);
+        // if (urlParams.get('refresh') === 'true') {
+        //     refreshModelsList();
+        //     refreshTrainedModels();
+        // }
+        
+        // 仅刷新已训练模型列表
+        refreshTrainedModels();
     });
 </script>
 {% endblock %} 

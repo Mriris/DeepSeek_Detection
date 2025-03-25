@@ -451,10 +451,10 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/houtai')
+@app.route('/backend')
 @login_required
-def houtai():
-    return render_template('houtai.html')
+def backend():
+    return render_template('backend.html', username=session.get('username'))
 
 
 @app.route('/detective')

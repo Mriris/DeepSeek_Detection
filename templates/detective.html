@@ -79,6 +79,15 @@
                                class="form-control w-50">
                     </div>
                     
+                    <!-- 添加检测模型选择下拉菜单 -->
+                    <div class="form-group w-100 mt-2">
+                        <label for="detect-model-select" class="form-label">选择检测模型:</label>
+                        <select name="detect_model_name" id="detect-model-select" class="form-select">
+                            <option value="BinEncoder" selected>BinEncoder</option>
+                        </select>
+                        <small class="text-muted">使用BinEncoder模型进行二进制漏洞检测</small>
+                    </div>
+                    
                     <!-- 添加模型选择下拉菜单 -->
                     <div class="form-group w-100 mt-2">
                         <label for="model-select" class="form-label">选择分析模型:</label>
@@ -166,48 +175,32 @@
         refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
         refreshBtn.disabled = true;
         
-        fetch('/api/ollama/models?include_trained=true')
+        fetch('/api/ollama/models?include_trained=false')
             .then(response => response.json())
             .then(data => {
                 if (data.models && Array.isArray(data.models)) {
                     // 清空现有选项
                     modelSelect.innerHTML = '';
                     
-                    // 分组添加选项
-                    const trainedModels = data.models.filter(model => model.type === 'trained');
-                    const baseModels = data.models.filter(model => model.type === 'base');
+                    // 只添加基础模型
+                    const baseModels = data.models.filter(model => model.type === 'base' || !model.type);
                     
-                    // 添加训练模型组
-                    if (trainedModels.length > 0) {
-                        const trainedGroup = document.createElement('optgroup');
-                        trainedGroup.label = '已训练模型';
-                        
-                        trainedModels.forEach(model => {
-                            const option = document.createElement('option');
-                            option.value = model.name;
-                            option.textContent = `${model.name} (基于 ${model.base_model})`;
-                            trainedGroup.appendChild(option);
-                        });
-                        
-                        modelSelect.appendChild(trainedGroup);
-                    }
-                    
-                    // 添加基础模型组
                     if (baseModels.length > 0) {
-                        const baseGroup = document.createElement('optgroup');
-                        baseGroup.label = '基础模型';
-                        
                         baseModels.forEach(model => {
                             const option = document.createElement('option');
                             option.value = model.name;
                             option.textContent = model.name;
-                            baseGroup.appendChild(option);
+                            modelSelect.appendChild(option);
                         });
-                        
-                        modelSelect.appendChild(baseGroup);
+                    } else {
+                        // 如果没有模型，添加默认选项
+                        const option = document.createElement('option');
+                        option.value = "deepseek-r1:14b";
+                        option.textContent = "deepseek-r1:14b";
+                        modelSelect.appendChild(option);
                     }
                     
-                    console.log(`已更新模型列表，共 ${data.models.length} 个模型`);
+                    console.log(`已更新分析模型列表，共 ${baseModels.length} 个模型`);
                 } else {
                     console.error('获取模型列表失败');
                 }
@@ -220,6 +213,35 @@
                 // 恢复按钮状态
                 refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
                 refreshBtn.disabled = false;
+            });
+    }
+    
+    // 刷新检测模型列表
+    function refreshDetectModelsList() {
+        const detectModelSelect = document.getElementById('detect-model-select');
+        
+        // 保留默认的BinEncoder选项
+        const defaultOption = detectModelSelect.options[0];
+        detectModelSelect.innerHTML = '';
+        detectModelSelect.appendChild(defaultOption);
+        
+        fetch('/api/models/trained')
+            .then(response => response.json())
+            .then(data => {
+                if (data.models && Array.isArray(data.models)) {
+                    // 添加训练好的模型
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.model_name;
+                        option.textContent = model.model_name;
+                        detectModelSelect.appendChild(option);
+                    });
+                    
+                    console.log(`已更新检测模型列表，共 ${data.models.length + 1} 个模型`);
+                }
+            })
+            .catch(error => {
+                console.error('刷新检测模型列表时出错:', error);
             });
     }
 
@@ -243,10 +265,15 @@
     function startDetection() {
         const formData = new FormData(document.getElementById('detect-form'));
         
-        // 记录选择的模型
+        // 记录选择的检测模型
+        const detectModelSelect = document.getElementById('detect-model-select');
+        const selectedDetectModel = detectModelSelect ? detectModelSelect.value : 'BinEncoder';
+        console.log("选择使用检测模型:", selectedDetectModel);
+        
+        // 记录选择的分析模型
         const modelSelect = document.getElementById('model-select');
         const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
-        console.log("选择使用模型:", selectedModel);
+        console.log("选择使用分析模型:", selectedModel);
 
         // 禁用按钮，防止重复点击
         document.getElementById('action-btn').disabled = true;
@@ -1060,31 +1087,53 @@
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const preSelectedModel = urlParams.get('model');
+        const preSelectedDetectModel = urlParams.get('detect_model');
         
+        // 刷新模型列表
+        refreshModelsList();
+        refreshDetectModelsList();
+        
+        // 设置预选的分析模型
         if (preSelectedModel) {
             const modelSelect = document.getElementById('model-select');
             
-            // 遍历所有选项查找匹配的模型
-            let found = false;
-            for (let i = 0; i < modelSelect.options.length; i++) {
-                if (modelSelect.options[i].value === preSelectedModel) {
-                    modelSelect.selectedIndex = i;
-                    found = true;
-                    break;
+            // 延迟设置选中项，等待刷新完成
+            setTimeout(() => {
+                for (let i = 0; i < modelSelect.options.length; i++) {
+                    if (modelSelect.options[i].value === preSelectedModel) {
+                        modelSelect.selectedIndex = i;
+                        break;
+                    }
                 }
-            }
+            }, 1000);
+        }
+        
+        // 设置预选的检测模型
+        if (preSelectedDetectModel) {
+            const detectModelSelect = document.getElementById('detect-model-select');
             
-            // 如果没找到，可能需要刷新模型列表
-            if (!found) {
-                refreshModelsList();
+            // 如果已有预选的检测模型选项，选择它
+            if (detectModelSelect) {
                 // 延迟设置选中项，等待刷新完成
                 setTimeout(() => {
-                    for (let i = 0; i < modelSelect.options.length; i++) {
-                        if (modelSelect.options[i].value === preSelectedModel) {
-                            modelSelect.selectedIndex = i;
+                    // 检查是否已有该选项
+                    let found = false;
+                    for (let i = 0; i < detectModelSelect.options.length; i++) {
+                        if (detectModelSelect.options[i].value === preSelectedDetectModel) {
+                            detectModelSelect.selectedIndex = i;
+                            found = true;
                             break;
                         }
                     }
+                    
+                    // 如果没有找到匹配的选项，添加一个新选项
+                    if (!found) {
+                        const option = new Option(preSelectedDetectModel, preSelectedDetectModel);
+                        detectModelSelect.add(option);
+                        detectModelSelect.value = preSelectedDetectModel;
+                    }
+                    
+                    console.log(`已预选检测模型: ${preSelectedDetectModel}`);
                 }, 1000);
             }
         }
