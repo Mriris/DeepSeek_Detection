@@ -5,10 +5,11 @@ import os
 import subprocess
 import sys
 from dotenv import load_dotenv
+from functools import wraps
 
 import ollama
 import requests
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for
 
 from process_vulfi import read_vulfi_file, read_extracted_functions, extract_vulfi_data, save_to_json
 
@@ -18,6 +19,7 @@ load_dotenv()
 # =============== 基础配置 ===============
 # Flask应用配置
 app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')  # 添加密钥用于session加密
 
 # 允许的文件扩展名
 ALLOWED_EXTENSIONS = set(os.getenv('ALLOWED_EXTENSIONS', 'bin,exe,elf').split(','))
@@ -283,6 +285,22 @@ def load_features():
     }
 
 
+# 登录验证装饰器
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# 用户数据存储（实际应用中应该使用数据库）
+users = {
+    "sharkiceee": "123456"
+}
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -290,11 +308,15 @@ def index():
 
 @app.route('/login')
 def login():
+    if 'username' in session:
+        return redirect(url_for('index'))
     return render_template('login.html')
 
 
 @app.route('/register')
 def register():
+    if 'username' in session:
+        return redirect(url_for('index'))
     return render_template('register.html')
 
 
@@ -309,9 +331,12 @@ def register_user():
         if not username or not password:
             return jsonify({'error': '用户名和密码不能为空'}), 400
 
-        # 这里应该添加用户名和密码的存储逻辑
-        # 在实际应用中，应该使用数据库存储，并对密码进行加密
-        # 这里为了简单演示，我们只返回成功信息
+        # 检查用户名是否已存在
+        if username in users:
+            return jsonify({'error': '用户名已存在'}), 400
+
+        # 保存用户信息（实际应用中应该使用数据库）
+        users[username] = password
 
         return jsonify({'success': True, 'message': '注册成功！'})
     except Exception as e:
@@ -326,8 +351,9 @@ def check_login():
         username = data.get('username')
         password = data.get('password')
 
-        # 简单的硬编码验证，实际应用中应该查询数据库
-        if username == "sharkiceee" and password == "123456":
+        # 验证用户名和密码
+        if username in users and users[username] == password:
+            session['username'] = username
             return jsonify({'success': True, 'username': username})
         else:
             return jsonify({'success': False, 'message': '用户名或密码错误'})
@@ -336,20 +362,29 @@ def check_login():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/logout')
+def logout():
+    # 清除所有会话数据
+    session.clear()
+    # 重定向到首页
+    return redirect(url_for('index'))
+
+
 @app.route('/houtai')
+@login_required
 def houtai():
-    # 获取URL参数中的用户名
-    username = request.args.get('username', '')
-    return render_template('houtai.html', username=username)
+    return render_template('houtai.html')
 
 
 @app.route('/detective')
+@login_required
 def portfolio_details():
     models = get_all_available_models()
     return render_template('detective.html', models=models)
 
 
 @app.route('/model_training')
+@login_required
 def model_training():
     models = get_ollama_models()
     trained_models = get_trained_models()
@@ -357,11 +392,13 @@ def model_training():
 
 
 @app.route('/knowledge_base')
+@login_required
 def knowledge_base():
     return render_template('knowledge_base.html')
 
 
 @app.route('/vulnerability_management')
+@login_required
 def vulnerability_management():
     return render_template('vulnerability_management.html')
 

@@ -51,11 +51,26 @@
             <ul>
                 <li><a href="/">主页</a></li> <!-- 首页 -->
                 <li><a href="/project-details">项目详情</a></li> <!-- 服务详情页面 -->
-                <li><a href="/login">登录</a></li>
+                {% if session.get('username') %}
+                    <li class="user-menu-item">
+                        <a href="#" class="user-menu">
+                            <i class="bi bi-person-circle"></i> {{ session.get('username') }}
+                            <div class="user-dropdown">
+                                <a href="#" onclick="confirmLogout(event)">退出登录</a>
+                            </div>
+                        </a>
+                    </li>
+                {% else %}
+                    <li><a href="/login">登录</a></li>
+                {% endif %}
             </ul>
             <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
         </nav>
-        <a class="btn-getstarted" href="/detective">开始</a>
+        {% if session.get('username') %}
+            <a class="btn-getstarted" href="/detective">开始</a>
+        {% else %}
+            <a class="btn-getstarted" href="/login">开始</a>
+        {% endif %}
     </div>
 </header>
 
@@ -73,6 +88,7 @@
             <li><a href="/model_training"><i class="bi bi-gpu-card"></i> 模型训练</a></li>
             <li><a href="/knowledge_base"><i class="bi bi-journal-text"></i> 本地知识库</a></li>
             <li><a href="/vulnerability_management"><i class="bi bi-shield-exclamation"></i> 漏洞信息管理</a></li>
+            <li><a href="/houtai"><i class="bi bi-gear"></i> 后台管理</a></li>
         </ul>
     </div>
 </div>
@@ -252,9 +268,61 @@
         background-color: rgba(244, 67, 54, 0.8);
         content: "关闭";
     }
+    
+    /* 添加用户菜单样式 */
+    .user-menu-item {
+        position: relative;
+    }
+    
+    .user-menu {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 10px 15px;
+    }
+    
+    .user-dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background-color: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        border-radius: 4px;
+        min-width: 120px;
+        z-index: 1000;
+    }
+    
+    .user-menu-item:hover .user-dropdown {
+        display: block;
+    }
+    
+    .user-dropdown a {
+        display: block;
+        padding: 10px 15px;
+        color: #333;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+    
+    .user-dropdown a:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .user-menu i {
+        margin-right: 5px;
+    }
 </style>
 
 <script>
+    // 添加退出登录确认函数
+    function confirmLogout(event) {
+        event.preventDefault();
+        if (confirm('确定要退出登录吗？')) {
+            window.location.href = '/logout';
+        }
+    }
+    
     // 左侧侧边栏收起功能
     document.addEventListener('DOMContentLoaded', function() {
         const toggleBtn = document.getElementById('toggleLeftSidebar');
