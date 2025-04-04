@@ -1668,6 +1668,10 @@ def get_vulnerabilities():
     # 获取分页参数
     page = int(request.args.get('page', 1))
     page_size = int(request.args.get('page_size', 15))
+    
+    # 获取过滤参数
+    risk_level = request.args.get('risk_level', None)
+    search_term = request.args.get('search', '').lower()
 
     # 模拟漏洞数据库 - 生成三页的数据
     vulnerabilities = [
@@ -1770,21 +1774,46 @@ def get_vulnerabilities():
          "description": "内存分配计算函数存在整数溢出",
          "details": "calculate_size函数在计算所需内存大小时可能发生整数溢出，导致分配的缓冲区小于实际需要的大小，引发缓冲区溢出。"}
     ]
+    
+    # 应用过滤条件
+    filtered_vulnerabilities = vulnerabilities
+    
+    # 按风险等级过滤
+    if risk_level:
+        filtered_vulnerabilities = [v for v in filtered_vulnerabilities if v['risk_level'] == risk_level]
+    
+    # 按搜索词过滤
+    if search_term:
+        filtered_vulnerabilities = [
+            v for v in filtered_vulnerabilities 
+            if search_term in v['id'].lower() or 
+               search_term in v['type'].lower() or 
+               search_term in v['function'].lower() or 
+               search_term in v['description'].lower()
+        ]
 
     # 计算总页数和当前页数据
-    total_items = len(vulnerabilities)
-    total_pages = (total_items + page_size - 1) // page_size
-
+    total_items = len(filtered_vulnerabilities)
+    total_pages = max(1, (total_items + page_size - 1) // page_size)
+    
+    # 确保请求的页码有效
+    if page > total_pages:
+        page = total_pages
+    
+    # 计算分页的起始和结束索引
     start_idx = (page - 1) * page_size
     end_idx = min(start_idx + page_size, total_items)
-    current_page_data = vulnerabilities[start_idx:end_idx]
+    
+    # 获取当前页的数据
+    current_page_data = filtered_vulnerabilities[start_idx:end_idx]
 
     return jsonify({
         "vulnerabilities": current_page_data,
         "total": total_items,
         "page": page,
         "page_size": page_size,
-        "total_pages": total_pages
+        "total_pages": total_pages,
+        "filtered": bool(risk_level or search_term)  # 指示是否应用了过滤
     })
 
 
