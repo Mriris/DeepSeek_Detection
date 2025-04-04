@@ -3,3 +3,7 @@ requests
 dotenv
 python-dotenv
 flask
+psutil
+pynvml
+nvidia-ml-py
+tqdm

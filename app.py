@@ -1818,5 +1818,61 @@ def get_vulnerability_details(vuln_id):
     return jsonify(vuln)
 
 
+# 翻译漏洞描述
+@app.route('/api/translate', methods=['POST'])
+def translate_text():
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        target_lang = data.get('target_lang', 'zh')
+        
+        if not text:
+            return jsonify({'error': '没有提供要翻译的文本'}), 400
+            
+        # 使用transformers进行翻译
+        try:
+            from transformers import MarianMTModel, MarianTokenizer
+        except ImportError:
+            # 如果未安装transformers，给出提示
+            return jsonify({
+                'error': '服务器未安装必要的翻译库，请先安装：pip install transformers sentencepiece'
+            }), 500
+        
+        # 加载模型和分词器（首次加载会下载模型，确保服务器有网络连接）
+        model_name = "Helsinki-NLP/opus-mt-en-zh"
+        
+        # 创建全局变量以便模型只加载一次
+        if not hasattr(app, 'translator_model') or not hasattr(app, 'translator_tokenizer'):
+            try:
+                app.translator_tokenizer = MarianTokenizer.from_pretrained(model_name)
+                app.translator_model = MarianMTModel.from_pretrained(model_name)
+                print("翻译模型加载成功")
+            except Exception as e:
+                print(f"加载翻译模型失败: {str(e)}")
+                return jsonify({'error': f'加载翻译模型失败: {str(e)}'}), 500
+        
+        # 执行翻译
+        try:
+            # 分词
+            inputs = app.translator_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            
+            # 生成翻译
+            translated = app.translator_model.generate(**inputs)
+            translated_text = app.translator_tokenizer.batch_decode(translated, skip_special_tokens=True)[0]
+            
+            return jsonify({
+                'original_text': text,
+                'translated_text': translated_text,
+                'target_lang': target_lang,
+                'model': model_name
+            })
+        except Exception as e:
+            print(f"翻译过程中出错: {str(e)}")
+            return jsonify({'error': f'翻译过程中出错: {str(e)}'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
