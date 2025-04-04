@@ -1678,7 +1678,7 @@ def get_vulnerabilities():
     use_chinese = request.args.get('use_chinese', 'true').lower() == 'true'
 
     # 加载所有漏洞数据
-    vulnerabilities_file = os.path.join(PROJECT_PATH, 'data', 'all_vulnerabilities.json')
+    vulnerabilities_file = os.path.join(PROJECT_PATH, 'data', 'cve_vulnerabilities_raw.json')
     try:
         with open(vulnerabilities_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
