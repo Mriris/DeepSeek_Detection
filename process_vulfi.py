@@ -5,6 +5,45 @@ import re
 import csv
 import json
 
+# 漏洞名称映射（英文到中文）
+VULNERABILITY_NAME_MAP = {
+    "Format String": "格式化字符串漏洞",
+    "Buffer Overflow": "缓冲区溢出",
+    "Command Injection": "命令注入",
+    "Unchecked Return Value of *scanf": "未检查的scanf返回值",
+    "Possible Dangling Pointer": "可能的悬垂指针",
+    "Possible Null Pointer Dereference": "可能的空指针解引用",
+    "Memory Leak": "内存泄漏",
+    "Comparison with Dynamic Count": "动态计数比较问题",
+    "Signed Comparison Issue": "有符号比较问题", 
+    "Unbound Loop": "无界循环"
+}
+
+# 函数名称映射（英文到中文）
+FUNCTION_NAME_MAP = {
+    "Loop Check": "循环检查",
+    "Array Access": "数组访问",
+    "memcpy": "内存复制",
+    "memmove": "内存移动",
+    "strcpy": "字符串复制",
+    "strncpy": "字符串长度复制",
+    "strcat": "字符串连接",
+    "strncat": "字符串长度连接",
+    "memset": "内存设置",
+    "memchr": "内存查找字符",
+    "memrchr": "内存反向查找字符",
+    "read": "读取",
+    "write": "写入",
+    "printf": "打印格式化字符串",
+    "scanf": "扫描输入",
+    "malloc": "内存分配",
+    "free": "内存释放",
+    "snprintf": "安全打印格式化字符串",
+    "vsnprintf": "可变参数安全打印格式化字符串",
+    "gets": "获取字符串",
+    "system": "系统命令执行",
+    "popen": "进程打开"
+}
 
 # 读取VulFi结果文件
 def read_vulfi_file(vulfi_file_path):
@@ -15,6 +54,14 @@ def read_vulfi_file(vulfi_file_path):
             for row in reader:
                 # 处理 None 值，将其替换为空字符串
                 row = {k: (v if v is not None else '') for k, v in row.items()}
+                # 翻译漏洞名称
+                if 'IssueName' in row and row['IssueName'] in VULNERABILITY_NAME_MAP:
+                    row['IssueName'] = VULNERABILITY_NAME_MAP[row['IssueName']]
+                
+                # 翻译函数名称（保留原名）
+                if 'FunctionName' in row and row['FunctionName'] in FUNCTION_NAME_MAP:
+                    row['FunctionName'] = f"{FUNCTION_NAME_MAP[row['FunctionName']]} ({row['FunctionName']})"
+                
                 vulfi_data.append(row)
         # 调试：输出读取的部分数据
         # print(f"读取的 VulFi 数据: {vulfi_data[:5]}")  # 输出前5行数据（可根据实际情况调整）
@@ -97,7 +144,7 @@ def extract_vulfi_data(vulfi_data, extracted_functions):
                 'address': address,
                 'instruction': formatted_instruction,
                 'priority': priority,
-                'issue_name': issue_name
+                'issue_name': issue_name  # 此处的issue_name已在read_vulfi_file函数中翻译为中文
             }
 
             # 获取该地址所在的函数名（如果可用）

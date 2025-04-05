@@ -25,6 +25,46 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')  # 添加
 # 允许的文件扩展名
 ALLOWED_EXTENSIONS = set(os.getenv('ALLOWED_EXTENSIONS', 'bin,exe,elf').split(','))
 
+# 漏洞名称映射（英文到中文）
+VULNERABILITY_NAME_MAP = {
+    "Format String": "格式化字符串漏洞",
+    "Buffer Overflow": "缓冲区溢出",
+    "Command Injection": "命令注入",
+    "Unchecked Return Value of *scanf": "未检查的scanf返回值",
+    "Possible Dangling Pointer": "可能的悬垂指针",
+    "Possible Null Pointer Dereference": "可能的空指针解引用",
+    "Memory Leak": "内存泄漏",
+    "Comparison with Dynamic Count": "动态计数比较问题",
+    "Signed Comparison Issue": "有符号比较问题", 
+    "Unbound Loop": "无界循环"
+}
+
+# 函数名称映射（英文到中文）
+FUNCTION_NAME_MAP = {
+    "Loop Check": "循环检查",
+    "Array Access": "数组访问",
+    "memcpy": "内存复制",
+    "memmove": "内存移动",
+    "strcpy": "字符串复制",
+    "strncpy": "字符串长度复制",
+    "strcat": "字符串连接",
+    "strncat": "字符串长度连接",
+    "memset": "内存设置",
+    "memchr": "内存查找字符",
+    "memrchr": "内存反向查找字符",
+    "read": "读取",
+    "write": "写入",
+    "printf": "打印格式化字符串",
+    "scanf": "扫描输入",
+    "malloc": "内存分配",
+    "free": "内存释放",
+    "snprintf": "安全打印格式化字符串",
+    "vsnprintf": "可变参数安全打印格式化字符串",
+    "gets": "获取字符串",
+    "system": "系统命令执行",
+    "popen": "进程打开"
+}
+
 # =============== 路径配置 ===============
 # 项目根路径
 PROJECT_PATH = os.getenv('PROJECT_PATH', r'C:\0Program\Python\DeepSeek_Detection')
@@ -302,10 +342,13 @@ def get_context_instructions(instruction_index, all_instructions, context_range=
 # 构建漏洞检测提示词
 def build_vulnerability_prompt(instruction, previous_instructions, next_instructions):
     """构建用于漏洞检测的提示词"""
+    # 确保使用中文漏洞名称
+    issue_name = instruction['issue_name']
+    
     return f"""# 汇编代码漏洞分析报告
 
 ## 分析对象
-- 风险指令: {{"instruction": "{instruction['instruction']}", "issue_name": "{instruction['issue_name']}", "priority": "{instruction['priority']}"}}
+- 风险指令: {{"instruction": "{instruction['instruction']}", "issue_name": "{issue_name}", "priority": "{instruction['priority']}"}}
 
 ## 上下文
 - 前序指令: {json.dumps(previous_instructions, ensure_ascii=False, indent=2)}
@@ -551,8 +594,16 @@ def detect():
             save_to_json(extracted_data, OUTPUT_FILE_PATH)
 
             # 读取并解析 scan_results.csv 文件
+            csv_content = []
             if os.path.exists(VULFI_FILE_PATH):
                 csv_content = read_csv_to_array(VULFI_FILE_PATH)
+                # 应用漏洞名称翻译
+                for item in csv_content:
+                    if 'IssueName' in item and item['IssueName'] in VULNERABILITY_NAME_MAP:
+                        item['IssueName'] = VULNERABILITY_NAME_MAP[item['IssueName']]
+                    # 应用函数名称翻译（保留原名）
+                    if 'FunctionName' in item and item['FunctionName'] in FUNCTION_NAME_MAP:
+                        item['FunctionName'] = f"{FUNCTION_NAME_MAP[item['FunctionName']]} ({item['FunctionName']})"
 
             return jsonify({'result': extracted_data, 'csv': csv_content, 'model_name': model_name})
 
