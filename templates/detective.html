@@ -155,13 +155,11 @@
 </section><!-- /Hero Section -->
 
 <script>
-    // 移除重复的声明
-    // let currentStep = 'select';
-    // let resultData = [];  // 用于保存检测结果数据
-
-    let currentStep = 'select';
+    // 修改JavaScript变量与函数定义
+    let currentStep = 'select'; // 'select', 'display_ida', 'detect', 'reset'
     let resultData = [];  // 用于保存检测结果数据
     let dangerLevelData = []; // 用于保存危险程度数据
+    let extractedFunctionsData = []; // 用于保存IDA提取的函数数据
     
     // 添加全局思考耗时变量
     let thinkDurationSeconds = null;
@@ -250,6 +248,9 @@
 
         if (currentStep === 'select') {
             handleFileUpload();
+        } else if (currentStep === 'display_ida') {
+            // 当显示IDA分析结果后，点击按钮进行漏洞检测
+            startDetection();
         } else if (currentStep === 'detect') {
             // 如果选中了地址，调用漏洞分析
             if (selectedAddress) {
@@ -260,63 +261,55 @@
         }
     });
 
-
     // 启动检测
     function startDetection() {
-        const formData = new FormData(document.getElementById('detect-form'));
-        
-        // 记录选择的检测模型
-        const detectModelSelect = document.getElementById('detect-model-select');
-        const selectedDetectModel = detectModelSelect ? detectModelSelect.value : 'BinEncoder';
-        console.log("选择使用检测模型:", selectedDetectModel);
-        
-        // 记录选择的分析模型
-        const modelSelect = document.getElementById('model-select');
-        const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
-        console.log("选择使用分析模型:", selectedModel);
-
         // 禁用按钮，防止重复点击
         document.getElementById('action-btn').disabled = true;
-        document.getElementById('action-btn').textContent = '检测中...';
+        document.getElementById('action-btn').textContent = '漏洞检测中...';
 
-        fetch('/detect', {
-            method: 'POST',
-            body: formData
+        const model_name = document.getElementById('model-select').value;
+
+        // 直接获取之前读取的CSV数据
+        fetch('/get_vulfi_results', {
+            method: 'GET'
         })
-            .then(response => response.json())
-            .then(data => {
-                console.log("收到的完整数据:", data);
+        .then(response => response.json())
+        .then(data => {
+            console.log("收到的csv数据:", data);
 
-                // 启用按钮
-                document.getElementById('action-btn').disabled = false;
+            // 启用按钮
+            document.getElementById('action-btn').disabled = false;
 
-                if (data.error) {
-                    console.error("错误:", data.error);
-                    alert(data.error || "发生了未知错误");
-                } else {
-                    let csvData = data.csv;
-                    console.log("收到的 csv 数据:", csvData);
+            if (data.error) {
+                console.error("错误:", data.error);
+                alert(data.error || "发生了未知错误");
+                document.getElementById('action-btn').textContent = '执行漏洞检测';
+            } else {
+                let csvData = data.csv;
+                console.log("处理的csv数据:", csvData);
 
-                    if (!Array.isArray(csvData)) {
-                        console.error("data.csv 不是数组，数据格式错误");
-                        alert("数据格式错误");
-                        return;
-                    }
-                    // 将结果保存在 data 中并显示表格
-                    resultData = csvData;
-                    displayResults(resultData);
-                    document.getElementById('action-btn').textContent = '请选择漏洞';
+                if (!Array.isArray(csvData)) {
+                    console.error("csvData不是数组，数据格式错误");
+                    alert("数据格式错误");
+                    document.getElementById('action-btn').textContent = '执行漏洞检测';
+                    return;
                 }
-            })
-            .catch(error => {
-                // 启用按钮
-                document.getElementById('action-btn').disabled = false;
-                document.getElementById('action-btn').textContent = '上传';
-                console.error('检测过程中出错:', error);
-                alert('检测过程中出错，请稍后再试');
-            });
+                
+                // 将结果保存在resultData中并显示漏洞表格
+                resultData = csvData;
+                displayResults(resultData);
+                document.getElementById('action-btn').textContent = '请选择漏洞';
+                currentStep = 'detect';
+            }
+        })
+        .catch(error => {
+            // 启用按钮
+            document.getElementById('action-btn').disabled = false;
+            document.getElementById('action-btn').textContent = '执行漏洞检测';
+            console.error('获取检测结果出错:', error);
+            alert('获取检测结果出错，请稍后再试');
+        });
     }
-
 
     function analyzeVulnerability(address) {
         console.log("开始分析漏洞:", address);
@@ -1063,20 +1056,268 @@
             // 显示上传的文件名
             const reader = new FileReader();
             reader.onload = function (e) {
-                document.getElementById('file-name').textContent = "已选择文件: " + file.name;
+                if (document.getElementById('file-name')) {
+                    document.getElementById('file-name').textContent = "已选择文件: " + file.name;
+                }
             };
             reader.readAsDataURL(file);
 
-            // 修改按钮为"开始检测"，并直接开始检测
-            document.getElementById('action-btn').textContent = '漏洞检测中';
-            currentStep = 'detect';  // 更新按钮状态
+            // 修改按钮为"IDA分析中"
+            document.getElementById('action-btn').textContent = 'IDA分析中...';
+            document.getElementById('action-btn').disabled = true;
 
-            startDetection();  // 立即开始检测
+            // 上传文件并进行IDA分析
+            uploadAndAnalyzeFile(file);
         } else {
             alert("请选择一个文件进行上传！");
         }
     }
 
+    // 新增：上传文件并进行IDA分析
+    function uploadAndAnalyzeFile(file) {
+        const formData = new FormData(document.getElementById('detect-form'));
+        
+        // 记录选择的检测模型
+        const detectModelSelect = document.getElementById('detect-model-select');
+        const selectedDetectModel = detectModelSelect ? detectModelSelect.value : 'BinEncoder';
+        console.log("选择使用检测模型:", selectedDetectModel);
+        
+        // 记录选择的分析模型
+        const modelSelect = document.getElementById('model-select');
+        const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
+        console.log("选择使用分析模型:", selectedModel);
+
+        fetch('/detect', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("收到的完整数据:", data);
+
+                if (data.error) {
+                    console.error("错误:", data.error);
+                    alert(data.error || "发生了未知错误");
+                    document.getElementById('action-btn').disabled = false;
+                    document.getElementById('action-btn').textContent = '上传';
+                } else {
+                    // 保存分析结果
+                    extractedFunctionsData = data.result;
+                    
+                    // 显示IDA分析结果
+                    displayIDAResults(extractedFunctionsData);
+                    
+                    // 更新按钮和当前步骤
+                    document.getElementById('action-btn').disabled = false;
+                    document.getElementById('action-btn').textContent = '执行漏洞检测';
+                    currentStep = 'display_ida';
+                }
+            })
+            .catch(error => {
+                document.getElementById('action-btn').disabled = false;
+                document.getElementById('action-btn').textContent = '上传';
+                console.error('文件处理过程中出错:', error);
+                alert('文件处理过程中出错，请稍后再试');
+            });
+    }
+
+    // 新增：显示IDA分析结果
+    function displayIDAResults(functions) {
+        // 生成表格 HTML 显示函数信息
+        let tableHTML = `
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary">
+                <h3 class="m-0 text-white" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); color: #ffffff !important;">
+                    <i class="bi bi-file-earmark-code" style="color: #ffffff !important;"></i> IDA分析结果
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="alert alert-info m-3">
+                    <i class="bi bi-info-circle"></i> IDA共提取了 <strong>${functions.length}</strong> 个函数。点击每行末尾的详情按钮可查看函数的指令列表。
+                </div>
+                <div class="table-responsive">
+                    <table id="ida-results-table" class="table table-striped table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-white" style="width: 40%">函数名称</th>
+                                <th class="text-white" style="width: 25%">起始地址</th>
+                                <th class="text-white" style="width: 25%">结束地址</th>
+                                <th class="text-white" style="width: 10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        // 生成表格行，显示所有函数
+        functions.forEach((func, index) => {
+            tableHTML += `
+            <tr>
+                <td><code>${func.function_name}</code></td>
+                <td><code>${func.start_address}</code></td>
+                <td><code>${func.end_address}</code></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" 
+                            onclick="showFunctionDetails(${index})" 
+                            title="查看函数指令详情">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </td>
+            </tr>
+            `;
+        });
+
+        tableHTML += `
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th><input type="text" class="form-control form-control-sm" placeholder="筛选函数名称" /></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 函数详情模态框 -->
+        <div class="modal fade" id="functionDetailsModal" tabindex="-1" aria-labelledby="functionDetailsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="functionDetailsModalLabel">函数指令详情</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="functionDetailsContent">
+                        <!-- 函数详情内容将在这里动态填充 -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+
+        // 显示IDA分析结果
+        document.getElementById('detection-result').innerHTML = tableHTML;
+
+        // 保存函数数据到全局变量，用于显示详情
+        window.extractedFunctionsData = functions;
+
+        // 如果之前已经初始化过 DataTable，则先销毁
+        if ($.fn.DataTable.isDataTable('#ida-results-table')) {
+            $('#ida-results-table').DataTable().destroy();
+        }
+
+        // 初始化 DataTable
+        let table = $('#ida-results-table').DataTable({
+            paging: true,       // 启用分页
+            ordering: true,     // 启用排序
+            info: true,         // 显示页脚信息
+            pageLength: 15,     // 每页显示15条记录
+            language: {
+                search: "搜索:",
+                lengthMenu: "显示 _MENU_ 条记录",
+                info: "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                infoEmpty: "显示第 0 至 0 项结果，共 0 项",
+                infoFiltered: "(由 _MAX_ 项结果过滤)",
+                paginate: {
+                    first: "首页",
+                    previous: "上页",
+                    next: "下页",
+                    last: "末页"
+                }
+            }
+        });
+
+        // 针对每一列的筛选
+        $('#ida-results-table tfoot th').each(function (i) {
+            // 如果当前列的 tfoot 单元格中存在 input 元素
+            let input = $(this).find('input');
+            if (input.length > 0) {
+                input.on('keyup change clear', function () {
+                    if (table.column(i).search() !== this.value) {
+                        table.column(i).search(this.value).draw();
+                    }
+                });
+            }
+        });
+
+        // 添加提示信息
+        const summaryHTML = `
+        <div class="alert alert-warning">
+            <i class="bi bi-lightning-charge"></i> IDA分析完成，请点击 <strong>执行漏洞检测</strong> 按钮继续进行漏洞分析。
+        </div>
+        `;
+
+        // 将提示信息添加到表格前
+        document.getElementById('detection-result').insertAdjacentHTML('afterbegin', summaryHTML);
+    }
+
+    // 新增：显示函数详情
+    function showFunctionDetails(index) {
+        if (!window.extractedFunctionsData || !window.extractedFunctionsData[index]) {
+            console.error('无法获取函数详情');
+            return;
+        }
+        
+        const func = window.extractedFunctionsData[index];
+        
+        let modalContent = `
+            <div class="mb-3">
+                <h5>函数基本信息</h5>
+                <table class="table table-sm table-bordered">
+                    <tr><th style="width: 150px;">函数名称</th><td><code>${func.function_name}</code></td></tr>
+                    <tr><th>起始地址</th><td><code>${func.start_address}</code></td></tr>
+                    <tr><th>结束地址</th><td><code>${func.end_address}</code></td></tr>
+                </table>
+            </div>
+        `;
+        
+        if (func.instructions && func.instructions.length > 0) {
+            modalContent += `
+                <div>
+                    <h5>指令列表</h5>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">地址</th>
+                                    <th style="width: 70%;">指令</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            func.instructions.forEach(instruction => {
+                modalContent += `
+                    <tr>
+                        <td><code>${instruction.address}</code></td>
+                        <td><code>${instruction.instruction}</code></td>
+                    </tr>
+                `;
+            });
+            
+            modalContent += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            modalContent += `<div class="alert alert-info">该函数没有指令数据</div>`;
+        }
+        
+        // 填充模态框内容
+        document.getElementById('functionDetailsContent').innerHTML = modalContent;
+        document.getElementById('functionDetailsModalLabel').textContent = `函数指令详情: ${func.function_name}`;
+        
+        // 显示模态框
+        const modal = new bootstrap.Modal(document.getElementById('functionDetailsModal'));
+        modal.show();
+    }
 
     // 刷新页面
     function resetPage() {

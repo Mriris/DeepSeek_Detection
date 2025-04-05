@@ -593,19 +593,9 @@ def detect():
             # 保存处理后的数据到 JSON 文件
             save_to_json(extracted_data, OUTPUT_FILE_PATH)
 
-            # 读取并解析 scan_results.csv 文件
-            csv_content = []
-            if os.path.exists(VULFI_FILE_PATH):
-                csv_content = read_csv_to_array(VULFI_FILE_PATH)
-                # 应用漏洞名称翻译
-                for item in csv_content:
-                    if 'IssueName' in item and item['IssueName'] in VULNERABILITY_NAME_MAP:
-                        item['IssueName'] = VULNERABILITY_NAME_MAP[item['IssueName']]
-                    # 应用函数名称翻译（保留原名）
-                    if 'FunctionName' in item and item['FunctionName'] in FUNCTION_NAME_MAP:
-                        item['FunctionName'] = f"{FUNCTION_NAME_MAP[item['FunctionName']]} ({item['FunctionName']})"
-
-            return jsonify({'result': extracted_data, 'csv': csv_content, 'model_name': model_name})
+            # 返回提取的函数数据，不再返回CSV内容
+            # 前端将分两步处理：1. 显示函数数据 2. 通过get_vulfi_results获取CSV数据进行漏洞分析
+            return jsonify({'result': extracted_functions})
 
         return jsonify({'error': '文件类型不支持'}), 400
 
@@ -1922,6 +1912,30 @@ def translate_text():
             return jsonify({'error': f'翻译过程中出错: {str(e)}'}), 500
             
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/get_vulfi_results', methods=['GET'])
+def get_vulfi_results():
+    """获取已经分析的VulFi结果，供前端显示漏洞检测结果使用"""
+    try:
+        # 读取并解析 scan_results.csv 文件
+        csv_content = []
+        if os.path.exists(VULFI_FILE_PATH):
+            csv_content = read_csv_to_array(VULFI_FILE_PATH)
+            # 应用漏洞名称翻译
+            for item in csv_content:
+                if 'IssueName' in item and item['IssueName'] in VULNERABILITY_NAME_MAP:
+                    item['IssueName'] = VULNERABILITY_NAME_MAP[item['IssueName']]
+                # 应用函数名称翻译（保留原名）
+                if 'FunctionName' in item and item['FunctionName'] in FUNCTION_NAME_MAP:
+                    item['FunctionName'] = f"{FUNCTION_NAME_MAP[item['FunctionName']]} ({item['FunctionName']})"
+            
+            return jsonify({'csv': csv_content})
+        else:
+            return jsonify({'error': 'VulFi分析结果文件不存在，请先上传文件进行分析'}), 404
+    except Exception as e:
+        print(f"获取VulFi结果时出错: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
