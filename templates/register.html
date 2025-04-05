@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<meta charset="utf-8">
+<title>注册</title>
+<section id="hero" class="hero section light-background" style="background-color: #d3e7fb">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="login-container" style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); margin: 40px auto;">
+                    <div class="text-center mb-4">
+                        <h2><strong>账号注册</strong></h2>
+                    </div>
+                    <form id="registerForm">
+                        <input type="text" placeholder="请输入账号" id="username" autocomplete="off" style="width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"/><br>
+                        <input type="password" placeholder="请输入密码" id="passwd" autocomplete="off" style="width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"/><br>
+                        <input type="password" placeholder="确认密码" id="confirm_passwd" autocomplete="off" style="width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"/><br>
+                        <input style="width: 100%; height: 50px; background:#409ecd; border:0px; color:#fff; border-radius:4px; font-size:16px; padding: 0; cursor: pointer;" type="button" value="注册" onclick="register()">
+                        <div style="margin-top: 15px; text-align: right;">
+                            <a href="/login" style="text-decoration: none; color: #409ecd;">已有账号？点击登录</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function register() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('passwd').value;
+        const confirmPassword = document.getElementById('confirm_passwd').value;
+
+        // 前端基本验证
+        if (!username || !password || !confirmPassword) {
+            alert('请填写所有字段');
+            return;
+        }
+
+        // 确认两次密码输入一致
+        if (password !== confirmPassword) {
+            alert('两次输入的密码不一致');
+            return;
+        }
+
+        // 使用 fetch API 发送请求到后端
+        fetch('/register_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('注册成功！请登录');
+                window.location.href = '/login';
+            } else {
+                alert(data.error || '注册失败，请稍后再试');
+            }
+        })
+        .catch(error => {
+            console.error('注册请求出错:', error);
+            alert('注册请求失败，请稍后再试');
+        });
+    }
+</script>
+{% endblock %} 

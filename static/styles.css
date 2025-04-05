@@ -5,6 +5,7 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    color: #111111;
 }
 
 .container {
@@ -34,4 +35,370 @@ button {
 
 button:hover {
     background-color: #0056b3;
+}
+
+.toggle-btn {
+    position: fixed;
+    bottom: 150px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid #007BFF;
+}
+
+/* 漏洞分析结果美化样式 */
+.divider-custom {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1.25rem 0;
+}
+
+.divider-custom .divider-custom-line {
+    width: 100%;
+    max-width: 7rem;
+    height: 0.25rem;
+    background-color: #2c3e50;
+    border-radius: 1rem;
+    border-color: #2c3e50;
+}
+
+.divider-custom .divider-custom-line:first-child {
+    margin-right: 1rem;
+}
+
+.divider-custom .divider-custom-line:last-child {
+    margin-left: 1rem;
+}
+
+.divider-custom .divider-custom-icon {
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
+
+.vulnerability-summary p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.instruction-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.instruction-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.instruction-title {
+    font-family: monospace;
+}
+
+.solution ul {
+    padding-left: 1.5rem;
+}
+
+.solution li {
+    margin-bottom: 0.5rem;
+}
+
+.solution code {
+    background: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #e83e8c;
+}
+
+/* 数据表格美化 */
+.table-responsive {
+    border-radius: .25rem;
+    overflow: hidden;
+}
+
+#results-table_wrapper .dataTables_filter input,
+#results-table_wrapper .dataTables_length select {
+    border-radius: .25rem;
+    border: 1px solid #ced4da;
+    padding: .25rem .5rem;
+}
+
+#results-table_wrapper .dataTables_filter input:focus,
+#results-table_wrapper .dataTables_length select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#results-table_wrapper .dataTables_paginate .paginate_button {
+    border-radius: .25rem;
+    margin: 0 3px;
+}
+
+#results-table_wrapper .dataTables_paginate .paginate_button.current {
+    background: #007bff;
+    border-color: #007bff;
+    color: white !important;
+}
+
+#results-table_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    color: #212529 !important;
+}
+
+#results-table_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: #0069d9;
+    border-color: #0062cc;
+    color: white !important;
+}
+
+/* 加载动画美化 */
+#loading-animation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+#loading-animation .spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 5px solid rgba(0, 123, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: #007bff;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 提高对比度的样式 */
+/* 卡片标题和内容加粗 */
+.card h3 {
+    font-weight: 700 !important;
+    font-size: 1.75rem !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.card p {
+    font-weight: 500 !important;
+    font-size: 1rem !important;
+}
+
+/* 高危漏洞卡片 - 更深的红色背景 */
+.bg-danger, .table-danger {
+    background-color: #b71c1c !important; /* 更深的红色 */
+}
+.bg-danger.text-white h3, 
+.bg-danger.text-white p,
+.bg-danger .text-white {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+    font-weight: 700 !important;
+}
+
+/* 中危漏洞卡片 - 明亮的黄色背景，黑色文字 */
+.bg-warning, .table-warning {
+    background-color: #ffca28 !important; /* 亮黄色 */
+}
+.bg-warning h3,
+.bg-warning p,
+.bg-warning .text-dark {
+    color: #000000 !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7) !important;
+}
+
+/* 低危漏洞卡片 - 更深的绿色背景 */
+.bg-success, .table-success {
+    background-color: #1b5e20 !important; /* 更深的绿色 */
+}
+.bg-success.text-white h3,
+.bg-success.text-white p,
+.bg-success .text-white {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+    font-weight: 700 !important;
+}
+
+/* 表格行高 */
+.table td, .table th {
+    padding: 0.75rem !important;
+    vertical-align: middle !important;
+}
+
+/* 表格文字加粗 */
+.table tbody td {
+    font-weight: 500 !important;
+}
+
+/* 徽章样式增强 */
+.badge {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    padding: 0.35em 0.65em !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* 高危徽章 */
+.badge.bg-danger {
+    background-color: #b71c1c !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 中危徽章 */
+.badge.bg-warning.text-dark {
+    background-color: #ffca28 !important;
+    color: #000000 !important;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7) !important;
+}
+
+/* 低危徽章 */
+.badge.bg-success {
+    background-color: #1b5e20 !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 卡片标题栏对比度增强 */
+.card-header.bg-primary {
+    background-color: #0d47a1 !important; /* 更深的蓝色 */
+}
+.card-header.bg-primary h3,
+.card-header.bg-primary h3 i,
+.card-header.bg-primary .text-white {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 提高表格边框对比度 */
+.table {
+    border-color: #dee2e6 !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 代码元素增强对比度 */
+code {
+    background-color: #f8f9fa !important;
+    color: #dc3545 !important;
+    padding: 0.2em 0.4em !important;
+    border-radius: 0.2rem !important;
+    font-size: 0.875em !important;
+    font-weight: 600 !important;
+    border: 1px solid #e9ecef !important;
+}
+
+/* 漏洞详情卡片内容加强对比度 */
+.instruction-card .card-body h5 {
+    font-weight: 700 !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.instruction-card .card-body p {
+    color: #212529 !important;
+}
+
+/* 优化按钮和表单控件对比度 */
+.btn-outline-primary {
+    color: #0d6efd !important;
+    border-color: #0d6efd !important;
+}
+
+.btn-outline-primary:hover {
+    color: #fff !important;
+    background-color: #0d6efd !important;
+}
+
+.form-control:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* 分页控件对比度优化 */
+.dataTables_paginate .paginate_button.current {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+/* 提高深色背景上浅色文字的可见度 */
+.bg-primary.text-white,
+.bg-secondary.text-white,
+.bg-dark.text-white,
+.bg-danger.text-white,
+.bg-success.text-white {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 提高浅色背景上深色文字的可见度 */
+.bg-light.text-dark,
+.bg-warning.text-dark,
+.bg-info.text-dark,
+.table-light {
+    color: #000000 !important;
+    font-weight: 600 !important;
+}
+
+.custom-text { /*第二部分主体颜色*/
+    color: #111111 !important; /* 字体颜色由#333333改为#111111，使其更深 */
+    font-size: 18px; /* 字体大小 */
+}
+
+/* 确保所有普通文本使用深色 */
+#analysis-result p,
+#analysis-result span:not(span:has(h1, h2, h3, h4, h5, h6)),
+#analysis-result div:not(div:has(h1, h2, h3, h4, h5, h6)),
+#analysis-result li,
+#vulnerability-result p,
+#vulnerability-result span:not(span:has(h1, h2, h3, h4, h5, h6)),
+#vulnerability-result div:not(div:has(h1, h2, h3, h4, h5, h6)),
+#vulnerability-result li,
+#stream-output p,
+#stream-output li,
+.card-body p,
+.think-last-line,
+.markdown-body p,
+.markdown-body li {
+    color: #111111 !important; /* 设置为更深的颜色 */
+}
+
+/* 针对思考内容的样式 */
+.think-content {
+    color: #111111 !important;
+}
+
+/* 针对Markdown渲染内容的样式 */
+.markdown-body {
+    color: #111111 !important;
+}
+
+/* 增强card内容的可读性 */
+.card p, .card li, .card span:not(.badge):not(.text-muted) {
+    color: #111111 !important;
 }

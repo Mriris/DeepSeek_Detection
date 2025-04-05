@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<meta charset="utf-8">
+<title>后台管理</title>
+<section id="hero" class="hero section light-background" style="background-color: #d3e7fb">
+    <div class="container">
+        <div class="row gy-4">
+            <!-- 显示用户信息 -->
+            <div class="col-md-12">
+                <h2><strong>欢迎，<span id="username"></span>.</strong></h2>
+                <p><span id="email"></span></p>
+            </div>
+            <!-- 左侧区域，占 5/12 -->
+            <div class="col-md-4 d-flex flex-column">
+                <!-- CONVERSION RATE 折线图 -->
+                <div class="mb-5" style="height: 150px;">
+                    <h3>CONVERSION RATE</h3>
+                    <canvas id="conversionRateChart"></canvas>
+                </div>
+                <!-- TOTAL VISITS 柱状图 -->
+                <div class="mb-5" style="height: 150px;">
+                    <h3>TOTAL VISITS</h3>
+                    <canvas id="totalVisitsChart"></canvas>
+                </div>
+            </div>
+            <!-- 右侧区域，占 7/12 -->
+            <div class="col-md-8">
+                <!-- 显示波浪曲线图的容器 -->
+                <canvas id="monthlyClickRateChart"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 引入 Chart.js 库 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 获取从Flask传递的用户名
+        let username = "{{ username }}";
+        // 如果没有从Flask获取到，则尝试从URL获取
+        if (!username) {
+            const urlParams = new URLSearchParams(window.location.search);
+            username = urlParams.get('username');
+        }
+        const email = "";
+
+        // 显示用户信息
+        document.getElementById('username').textContent = username;
+        document.getElementById('email').textContent = email;
+
+        // 直接定义每月点击量数据
+        const clickRates = [100, 120, 150, 180, 200, 220, 250, 280, 300, 250, 200, 150];
+        const labels = [
+            '一月', '二月', '三月', '四月', '五月', '六月',
+            '七月', '八月', '九月', '十月', '十一月', '十二月'
+        ];
+
+        // 获取点击量图的 canvas 元素
+        const monthlyClickRateCtx = document.getElementById('monthlyClickRateChart').getContext('2d');
+        // 创建点击量折线图
+        new Chart(monthlyClickRateCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '每月网站点击量',
+                    data: clickRates,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                    pointBorderColor: 'rgba(75, 192, 192, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '点击量'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: '月份'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+
+        // 模拟 CONVERSION RATE 数据
+        const conversionRateData = [0.1, 0.2, 0.3, 0.25, 0.35, 0.4];
+        const conversionRateLabels = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6'];
+        // 获取 CONVERSION RATE 图的 canvas 元素
+        const conversionRateCtx = document.getElementById('conversionRateChart').getContext('2d');
+        // 创建 CONVERSION RATE 折线图
+        new Chart(conversionRateCtx, {
+            type: 'line',
+            data: {
+                labels: conversionRateLabels,
+                datasets: [{
+                    label: 'DOWNLOAD RATE',
+                    data: conversionRateData,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    pointBorderColor: 'rgba(255, 99, 132, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '季度'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '转化率'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+
+        // 模拟 TOTAL VISITS 数据
+        const totalVisitsData = [1000, 1200, 1500, 1300, 1600, 1800];
+        const totalVisitsLabels = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6'];
+        // 获取 TOTAL VISITS 图的 canvas 元素
+        const totalVisitsCtx = document.getElementById('totalVisitsChart').getContext('2d');
+        // 创建 TOTAL VISITS 柱状图
+        new Chart(totalVisitsCtx, {
+            type: 'bar',
+            data: {
+                labels: totalVisitsLabels,
+                datasets: [{
+                    label: 'TOTAL VISITS',
+                    data: totalVisitsData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: '季度'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '访问量'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+
+        // 模拟 DOWNLOADS 数据
+        const downloadsData = [200, 150, 100, 50];
+        const downloadsLabels = ['APP', 'PDF', 'ZIP', 'DOC'];
+        // 获取 DOWNLOADS 图的 canvas 元素
+        const downloadsCtx = document.getElementById('downloadsChart').getContext('2d');
+        // 创建 DOWNLOADS 饼状图
+        const downloadsChart = new Chart(downloadsCtx, {
+            type: 'pie',
+            data: {
+                labels: downloadsLabels,
+                datasets: [{
+                    label: 'DOWNLOADS',
+                    data: downloadsData,
+                    backgroundColor: [
+                        'rgba(255, 205, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 99, 132, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 205, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false // 隐藏默认图例
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+
+        // 将图例渲染到自定义容器中
+        const downloadsLegend = document.getElementById('downloadsLegend');
+        downloadsLegend.innerHTML = downloadsChart.generateLegend();
+    });
+</script>
+{% endblock %}

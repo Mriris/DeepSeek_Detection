@@ -3,7 +3,10 @@ import idaapi
 import idautils
 import idc
 import json
+import os
 
+# 从环境变量获取输出路径
+OUTPUT_PATH = os.environ.get('EXTRACTED_FUNCTIONS_FILE_PATH', r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json')
 
 def extract_function_info():
     functions = []
@@ -35,7 +38,7 @@ def extract_instructions(func_start, func_end):
 
 
 def save_as_json(functions):
-    with open(r'C:\0Program\Python\DeepSeek_Detection\example\Web\extracted_functions.json', 'w') as json_file:
+    with open(OUTPUT_PATH, 'w') as json_file:
         json.dump(functions, json_file, indent=4)
 
 idaapi.auto_wait()
@@ -46,7 +49,7 @@ functions = extract_function_info()
 # 保存为JSON文件
 save_as_json(functions)
 
-print("Exported functions to 'extracted_functions.json'")
+print(f"Exported functions to '{OUTPUT_PATH}'")
 
 # 漏洞检测
 plugin_name = "vulfi"

@@ -1,14 +1,75 @@
 {% extends 'base.html' %}
 
+<!-- 在head部分之前添加自定义样式 -->
+{% block custom_styles %}
+<style>
+    /* 确保流式输出中的文本是深色的，但不修改其他样式 */
+    #stream-output p, 
+    #stream-output li, 
+    #stream-output span:not(.badge):not(.text-muted),
+    .think-last-line,
+    .think-content {
+        color: #111111 !important;
+    }
+    
+    /* 确保结果卡片中的文本是深色的 */
+    #vulnerability-result .card-body p,
+    #vulnerability-result .card-body li,
+    #vulnerability-result .card-body span:not(.badge):not(.text-muted) {
+        color: #111111 !important;
+    }
+    
+    /* 使Markdown内容更易读 */
+    .marked-content p,
+    .marked-content li,
+    .marked-content pre {
+        color: #111111 !important;
+    }
+    
+    /* 全局规则：强制所有文本为深色，但保留原字体大小 */
+    #vulnerability-result strong,
+    #vulnerability-result b,
+    #vulnerability-result em,
+    #stream-output strong, 
+    #stream-output b,
+    #stream-output em,
+    .think-container strong,
+    .think-container b,
+    .think-container em,
+    .think-summary strong,
+    .card-body strong,
+    .card-body b,
+    .card-body em {
+        color: #111111 !important;
+    }
+    
+    /* 针对特定的Markdown渲染内容进行颜色覆盖，但不影响字体大小 */
+    #stream-output *:not(.badge):not(.text-muted):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+    #vulnerability-result *:not(.badge):not(.text-muted):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+        color: #111111 !important;
+    }
+    
+    /* markdown-dark-text类样式，只修改颜色 */
+    .markdown-dark-text * {
+        color: #111111 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <section id="hero" class="hero section dark-background">
     <div class="container">
+        <!-- 页面标题 -->
+        <div class="page-header mb-4">
+            <h2><i class="bi bi-shield-check"></i> 漏洞检测平台</h2>
+            <p class="text-muted">上传可执行文件进行安全分析</p>
+        </div>
         <div class="row gy-4">
             <!-- 左侧，上传文件和操作按钮 -->
-            <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center" data-aos="zoom-out">
-                <h1>VULNEX</h1>
-                <p>通过深度学习模型分析代码中的潜在安全漏洞</p>
+            <div class="col-lg-7 order-2 order-lg-1 d-flex flex-column justify-content-center" data-aos="zoom-out">
+                <h1 style="font-size: 48px; color: #37517e">Scanix</h1>
+                <p style="font-size: 24px; color: #444444">通过深度学习模型分析代码中的潜在安全漏洞</p>
 
                 <!-- 文件上传表单 -->
                 <form action="/detect" method="POST" enctype="multipart/form-data" id="detect-form"
@@ -17,6 +78,57 @@
                         <input type="file" name="bin_file" id="bin-upload" accept=".bin, .exe, .elf"
                                class="form-control w-50">
                     </div>
+                    
+                    <!-- 添加检测模型选择下拉菜单 -->
+                    <div class="form-group w-100 mt-2">
+                        <label for="detect-model-select" class="form-label">选择检测模型:</label>
+                        <select name="detect_model_name" id="detect-model-select" class="form-select">
+                            <option value="BinEncoder" selected>BinEncoder</option>
+                        </select>
+                        <small class="text-muted">使用BinEncoder模型进行二进制漏洞检测</small>
+                    </div>
+                    
+                    <!-- 添加模型选择下拉菜单 -->
+                    <div class="form-group w-100 mt-2">
+                        <label for="model-select" class="form-label">选择分析模型:</label>
+                        <div class="d-flex">
+                            <select name="model_name" id="model-select" class="form-select me-2">
+                                {% if models %}
+                                    <optgroup label="已训练模型">
+                                    {% for model in models %}
+                                        {% if model.type == 'trained' %}
+                                        <option value="{{ model.name }}">{{ model.name }} (基于 {{ model.base_model }})</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </optgroup>
+                                    
+                                    <optgroup label="基础模型">
+                                    {% for model in models %}
+                                        {% if model.type == 'base' %}
+                                        <option value="{{ model.name }}">{{ model.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </optgroup>
+                                {% else %}
+                                    <option value="deepseek-r1:14b">deepseek-r1:14b</option>
+                                {% endif %}
+                            </select>
+                            <button type="button" id="refresh-models-btn" class="btn btn-outline-primary" 
+                                    onclick="refreshModelsList()" title="刷新模型列表">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 添加流式输出选项 -->
+                    <div class="form-group w-100 mt-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="stream-output-toggle" checked>
+                            <label class="form-check-label" for="stream-output-toggle">
+                                启用流式输出 <small class="text-muted">(实时显示分析过程)</small>
+                            </label>
+                        </div>
+                    </div>
                 </form>
                 <!-- 按钮 -->
                 <div class="d-flex mt-3">
@@ -24,8 +136,9 @@
                 </div>
             </div>
             <!-- 右侧，示意图（可以用任何展示漏洞检测结果的图像或保留默认） -->
-            <div class="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
+            <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="200">
                 <img id="image-display" src="../static/assets/img/hero-img.png" class="img-fluid animated"
+                     style="margin-left: -50px;"
                      alt="示意图">
                 <!-- 增强后的图像，默认隐藏，改为显示检测结果 -->
                 <img id="enhanced-image-display" src="" style="margin-left: 20px;" class="img-fluid animated d-none"
@@ -33,31 +146,114 @@
             </div>
 
         </div>
-        <!-- 加载动画 -->
-        <div id="loading-animation" style="display: none;">
-            <div class="spinner"></div>
-            <p>正在检测，请稍候...</p>
-        </div>
-        <!-- 显示检测结果 -->
-        <div id="detection-result" style="margin-top: 20px; color: #fff;"></div>
-        <!-- 显示漏洞分析结果 -->
-        <div id="analysis-result" style="margin-top: 20px; color: #fff;"></div>
+        <!-- 漏洞检测结果区域 -->
+        <div id="detection-result" class="mb-5"></div>
+        
+        <!-- 漏洞分析结果占位区域 -->
+        <div id="vulnerability-analysis-placeholder"></div>
     </div>
 </section><!-- /Hero Section -->
 
 <script>
-    let currentStep = 'select';
+    // 修改JavaScript变量与函数定义
+    let currentStep = 'select'; // 'select', 'display_ida', 'detect', 'reset'
     let resultData = [];  // 用于保存检测结果数据
+    let dangerLevelData = []; // 用于保存危险程度数据
+    let extractedFunctionsData = []; // 用于保存IDA提取的函数数据
+    
+    // 添加全局思考耗时变量
+    let thinkDurationSeconds = null;
+    
+    // 刷新模型列表
+    function refreshModelsList() {
+        const refreshBtn = document.getElementById('refresh-models-btn');
+        const modelSelect = document.getElementById('model-select');
+        
+        // 添加加载动画
+        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        refreshBtn.disabled = true;
+        
+        fetch('/api/ollama/models?include_trained=false')
+            .then(response => response.json())
+            .then(data => {
+                if (data.models && Array.isArray(data.models)) {
+                    // 清空现有选项
+                    modelSelect.innerHTML = '';
+                    
+                    // 只添加基础模型
+                    const baseModels = data.models.filter(model => model.type === 'base' || !model.type);
+                    
+                    if (baseModels.length > 0) {
+                        baseModels.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model.name;
+                            option.textContent = model.name;
+                            modelSelect.appendChild(option);
+                        });
+                    } else {
+                        // 如果没有模型，添加默认选项
+                        const option = document.createElement('option');
+                        option.value = "deepseek-r1:14b";
+                        option.textContent = "deepseek-r1:14b";
+                        modelSelect.appendChild(option);
+                    }
+                    
+                    console.log(`已更新分析模型列表，共 ${baseModels.length} 个模型`);
+                } else {
+                    console.error('获取模型列表失败');
+                }
+            })
+            .catch(error => {
+                console.error('刷新模型列表时出错:', error);
+                alert('刷新模型列表失败，请稍后再试');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                refreshBtn.disabled = false;
+            });
+    }
+    
+    // 刷新检测模型列表
+    function refreshDetectModelsList() {
+        const detectModelSelect = document.getElementById('detect-model-select');
+        
+        // 保留默认的BinEncoder选项
+        const defaultOption = detectModelSelect.options[0];
+        detectModelSelect.innerHTML = '';
+        detectModelSelect.appendChild(defaultOption);
+        
+        fetch('/api/models/trained')
+            .then(response => response.json())
+            .then(data => {
+                if (data.models && Array.isArray(data.models)) {
+                    // 添加训练好的模型
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.model_name;
+                        option.textContent = model.model_name;
+                        detectModelSelect.appendChild(option);
+                    });
+                    
+                    console.log(`已更新检测模型列表，共 ${data.models.length + 1} 个模型`);
+                }
+            })
+            .catch(error => {
+                console.error('刷新检测模型列表时出错:', error);
+            });
+    }
 
     document.getElementById('action-btn').addEventListener('click', function (event) {
         event.preventDefault();
 
         if (currentStep === 'select') {
             handleFileUpload();
+        } else if (currentStep === 'display_ida') {
+            // 当显示IDA分析结果后，点击按钮进行漏洞检测
+            startDetection();
         } else if (currentStep === 'detect') {
             // 如果选中了地址，调用漏洞分析
             if (selectedAddress) {
-                document.getElementById('loading-animation').style.display = 'block';
                 analyzeVulnerability(selectedAddress);
             }
         } else if (currentStep === 'reset') {
@@ -65,223 +261,707 @@
         }
     });
 
-
     // 启动检测
     function startDetection() {
-        const formData = new FormData(document.getElementById('detect-form'));
+        // 禁用按钮，防止重复点击
+        document.getElementById('action-btn').disabled = true;
+        document.getElementById('action-btn').textContent = '漏洞检测中...';
 
-        // 显示加载动画
-        document.getElementById('loading-animation').style.display = 'block';
-        document.getElementById('action-btn').disabled = true;  // 禁用按钮，防止重复点击
+        const model_name = document.getElementById('model-select').value;
 
-        fetch('/detect', {
-            method: 'POST',
-            body: formData
+        // 直接获取之前读取的CSV数据
+        fetch('/get_vulfi_results', {
+            method: 'GET'
         })
-            .then(response => response.json())
-            .then(data => {
-                console.log("收到的完整数据:", data);
+        .then(response => response.json())
+        .then(data => {
+            console.log("收到的csv数据:", data);
 
-                // 隐藏加载动画并启用按钮
-                document.getElementById('loading-animation').style.display = 'none';
-                document.getElementById('action-btn').disabled = false;  // 启用按钮
+            // 启用按钮
+            document.getElementById('action-btn').disabled = false;
 
-                if (data.error) {
-                    console.error("错误:", data.error);
-                    alert(data.error || "发生了未知错误");
-                } else {
-                    let csvData = data.csv;
-                    console.log("收到的 csv 数据:", csvData);
+            if (data.error) {
+                console.error("错误:", data.error);
+                alert(data.error || "发生了未知错误");
+                document.getElementById('action-btn').textContent = '执行漏洞检测';
+            } else {
+                let csvData = data.csv;
+                console.log("处理的csv数据:", csvData);
 
-                    if (!Array.isArray(csvData)) {
-                        console.error("data.csv 不是数组，数据格式错误");
-                        alert("数据格式错误");
-                        return;
-                    }
-                    // 将结果保存在 data 中并显示表格
-                    resultData = csvData;
-                    displayResults(resultData);
-                    document.getElementById('action-btn').textContent = '请选择漏洞';
+                if (!Array.isArray(csvData)) {
+                    console.error("csvData不是数组，数据格式错误");
+                    alert("数据格式错误");
+                    document.getElementById('action-btn').textContent = '执行漏洞检测';
+                    return;
                 }
-            })
-            .catch(error => {
-                // 隐藏加载动画并启用按钮
-                document.getElementById('loading-animation').style.display = 'none';
-                document.getElementById('action-btn').disabled = false;  // 启用按钮
-                console.error('检测过程中出错:', error);
-                alert('检测过程中出错，请稍后再试');
-            });
+                
+                // 将结果保存在resultData中并显示漏洞表格
+                resultData = csvData;
+                displayResults(resultData);
+                document.getElementById('action-btn').textContent = '请选择漏洞';
+                currentStep = 'detect';
+            }
+        })
+        .catch(error => {
+            // 启用按钮
+            document.getElementById('action-btn').disabled = false;
+            document.getElementById('action-btn').textContent = '执行漏洞检测';
+            console.error('获取检测结果出错:', error);
+            alert('获取检测结果出错，请稍后再试');
+        });
     }
-
 
     function analyzeVulnerability(address) {
         console.log("开始分析漏洞:", address);
+        
+        // 获取选择的模型
+        const modelSelect = document.getElementById('model-select');
+        const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
+        console.log("使用模型:", selectedModel);
 
-        fetch(`/analyze/${address}`, {
+        // 检查是否启用流式输出
+        const streamEnabled = document.getElementById('stream-output-toggle').checked;
+        console.log("流式输出状态:", streamEnabled ? "已启用" : "已禁用");
+        
+        // 重置思考耗时变量
+        thinkDurationSeconds = null;
+        
+        // 显示分析中的加载动画
+        const resultSection = document.querySelector('#vulnerability-result');
+        
+        if (!resultSection) {
+            // 创建结果区域
+            const newSection = document.createElement('div');
+            newSection.id = 'vulnerability-result';
+            newSection.innerHTML = `
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary">
+                        <h3 class="m-0 text-white" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); color: #ffffff !important;">
+                            <i class="bi bi-shield-exclamation" style="color: #ffffff !important;"></i> 漏洞分析进行中...
+                        </h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">正在分析...</span>
+                            </div>
+                        </div>
+                        <p class="text-center mt-3">正在分析漏洞，请稍候...</p>
+                        <div id="stream-output" class="mt-4" ${!streamEnabled ? 'style="display:none"' : ''}></div>
+                    </div>
+                </div>
+            `;
+            
+            // 将结果区域添加到页面
+            const resultPlaceholder = document.getElementById('vulnerability-analysis-placeholder');
+            if (resultPlaceholder) {
+                resultPlaceholder.appendChild(newSection);
+                // 滚动到结果区域
+                resultPlaceholder.scrollIntoView({ behavior: 'smooth' });
+            }
+        } else {
+            // 更新现有结果区域
+            resultSection.innerHTML = `
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary">
+                        <h3 class="m-0 text-white" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); color: #ffffff !important;">
+                            <i class="bi bi-shield-exclamation" style="color: #ffffff !important;"></i> 漏洞分析进行中...
+                        </h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">正在分析...</span>
+                            </div>
+                        </div>
+                        <p class="text-center mt-3">正在分析漏洞，请稍候...</p>
+                        <div id="stream-output" class="mt-4" ${!streamEnabled ? 'style="display:none"' : ''}></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 根据用户选择决定使用哪种API
+        if (streamEnabled) {
+            // 使用流式API
+            analyzeVulnerabilityStream(address, selectedModel);
+        } else {
+            // 使用非流式API
+            analyzeVulnerabilityNonStream(address, selectedModel);
+        }
+    }
+    
+    // 非流式分析函数
+    function analyzeVulnerabilityNonStream(address, selectedModel) {
+        fetch(`/analyze/${address}?model_name=${selectedModel}&stream=false`, {
             method: 'GET'
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                document.getElementById('loading-animation').style.display = 'none';
                 if (data.error) {
                     console.error("分析失败:", data.error);
-                    alert("分析失败");
+                    alert("分析失败: " + data.error);
                 } else {
                     console.log("分析结果:", data.result);
-
-                    // 提取 <think> 和外部 Markdown 内容
-                    let resultContent = data.result;
-                    let thinkStartIndex = resultContent.indexOf('<think>');
-                    let thinkEndIndex = resultContent.indexOf('</think>');
-
-                    // 提取 think 内容
-                    let thinkContent = '';
-                    let markdownContent = '';
-
-                    if (thinkStartIndex !== -1 && thinkEndIndex !== -1) {
-                        thinkContent = resultContent.slice(thinkStartIndex + 7, thinkEndIndex); // 去除 <think> 和 </think>
-                        markdownContent = resultContent.slice(thinkEndIndex + 8).trim(); // 获取 think 后面的内容
-                    } else {
-                        markdownContent = resultContent; // 如果没有 <think> 标签，直接显示结果
-                    }
-
-                    // 更新分析结果区域
-                    document.getElementById('analysis-result').innerHTML = `
-                <h3>漏洞分析结果</h3>
-                <h4>思考部分</h4>
-                <div class="think-content">${thinkContent}</div>
-                <h4>详细分析</h4>
-                <div id="markdown-content">${marked(markdownContent)}</div>
-            `;
+                    // 保存原始Markdown内容到全局变量
+                    window.currentAnalysisContent = data.result;
+                    // 更新UI显示结果
+                    updateAnalysisResult(data.result, selectedModel);
                 }
             })
             .catch(error => {
-                console.error("分析时出错:", error);
-                alert("分析时出错，请稍后再试");
+                console.error("分析过程中出错:", error);
+                // 显示错误消息在结果区域
+                const streamOutput = document.getElementById('stream-output');
+                if (streamOutput) {
+                    streamOutput.innerHTML = `<div class="alert alert-danger mt-3">分析过程中出错: ${error.message}</div>`;
+                }
             });
     }
 
-    //         function analyzeVulnerability(address) {
-    //     console.log("开始分析漏洞:", address);
-    //
-    //     fetch(`/analyze/${address}`, {
-    //         method: 'GET'
-    //     })
-    //     .then(response => response.json())
-    //     .then(data => {
-    //         document.getElementById('loading-animation').style.display = 'none';
-    //         if (data.error) {
-    //             console.error("分析失败:", data.error);
-    //             alert("分析失败");
-    //         } else {
-    //             console.log("分析结果:", data.result);
-    //
-    //             // 提取 <think> 和外部 Markdown 内容
-    //             let resultContent = data.result;
-    //             let thinkStartIndex = resultContent.indexOf('<think>');
-    //             let thinkEndIndex = resultContent.indexOf('</think>');
-    //
-    //             // 提取 think 内容
-    //             let thinkContent = '';
-    //             let markdownContent = '';
-    //
-    //             if (thinkStartIndex !== -1 && thinkEndIndex !== -1) {
-    //                 thinkContent = resultContent.slice(thinkStartIndex + 7, thinkEndIndex); // 去除 <think> 和 </think>
-    //                 markdownContent = resultContent.slice(thinkEndIndex + 8).trim(); // 获取 think 后面的内容
-    //             } else {
-    //                 markdownContent = resultContent; // 如果没有 <think> 标签，直接显示结果
-    //             }
-    //
-    //             // 开始逐行显示思考部分
-    //             let thinkContentLines = thinkContent.split('\n');
-    //             let markdownContentLines = markdownContent.split('\n');
-    //
-    //             let lineIndex = 0;
-    //             let allContentLines = thinkContentLines.concat(markdownContentLines);
-    //
-    //             // 定义逐行输出的函数
-    //             function displayLineByLine() {
-    //                 if (lineIndex < allContentLines.length) {
-    //                     let currentLine = allContentLines[lineIndex];
-    //                     let isThinkLine = lineIndex < thinkContentLines.length;
-    //
-    //                     // 逐行更新思考部分和分析部分
-    //                     if (isThinkLine) {
-    //                         document.querySelector('.think-content').innerHTML += currentLine + "<br>";
-    //                     } else {
-    //                         document.querySelector('#markdown-content').innerHTML += currentLine + "<br>";
-    //                     }
-    //
-    //                     lineIndex++;
-    //                 } else {
-    //                     clearInterval(intervalID); // 完成逐行显示后停止定时器
-    //                 }
-    //             }
-    //
-    //             // 初始化分析结果显示区域
-    //             document.getElementById('analysis-result').innerHTML = `
-    //                 <h3>漏洞分析结果</h3>
-    //                 <h4>思考部分</h4>
-    //                 <div class="think-content"></div>
-    //                 <h4>详细分析</h4>
-    //                 <div id="markdown-content"></div>
-    //             `;
-    //
-    //             // 设置定时器逐行显示内容，每500ms显示一行
-    //             let intervalID = setInterval(displayLineByLine, 500);
-    //         }
-    //     })
-    //     .catch(error => {
-    //         console.error("分析时出错:", error);
-    //         alert("分析时出错，请稍后再试");
-    //     });
-    // }
+    function analyzeVulnerabilityStream(address, selectedModel) {
+        // 创建一个EventSource对象连接到流式API
+        const eventSource = new EventSource(`/analyze/${address}?model_name=${selectedModel}&stream=true`);
+        
+        // 存储累积的响应文本
+        let accumulatedText = '';
+        let lastChunk = '';  // 用于检测重复内容
+        let duplicateCounter = 0;  // 重复计数器
+        const streamOutput = document.getElementById('stream-output');
+        
+        // 思考内容跟踪
+        let isThinking = false;
+        let thinkStartTime = null;
+        let thinkContent = '';
+        let normalContent = '';
+        let thinkStartIndex = -1;
+        
+        // 使用全局变量，不需要重新声明
+        // let thinkDurationSeconds = null;
+        
+        // 添加统一样式类到流式输出容器
+        if (streamOutput) {
+            streamOutput.classList.add('analysis-content');
+            streamOutput.style.fontSize = getComputedStyle(document.querySelector('.card-body')).fontSize;
+        }
+        
+        // 处理来自服务器的消息
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                
+                // 检查是否是开始或结束事件
+                if (data.event === 'start') {
+                    console.log('分析开始');
+                    return;
+                } else if (data.event === 'end') {
+                    console.log('分析结束');
+                    eventSource.close();
+                    
+                    // 保存原始内容到全局变量
+                    window.currentAnalysisContent = accumulatedText;
+                    
+                    // 使用accumulated结果更新UI
+                    updateAnalysisResult(accumulatedText, selectedModel);
+                    return;
+                }
+                
+                // 处理内容更新
+                if (data.content) {
+                    // 检测重复内容
+                    if (data.content === lastChunk) {
+                        duplicateCounter++;
+                        
+                        // 如果重复次数超过阈值，关闭连接并显示警告
+                        if (duplicateCounter > 5) {
+                            console.warn('检测到重复内容，可能存在循环');
+                            eventSource.close();
+                            
+                            if (streamOutput) {
+                                streamOutput.innerHTML += `<div class="alert alert-warning mt-3">检测到重复内容，已停止接收</div>`;
+                            }
+                            
+                            // 尝试清理可能的重复内容
+                            accumulatedText = cleanupDuplicateContent(accumulatedText);
+                            
+                            // 显示已有内容
+                            updateAnalysisResult(accumulatedText, selectedModel);
+                            return;
+                        }
+                    } else {
+                        // 重置计数器并更新上一个块
+                        duplicateCounter = 0;
+                        lastChunk = data.content;
+                    }
+                    
+                    // 限制单次内容长度
+                    const contentToAdd = data.content.length > 1000 ? 
+                                         data.content.substring(0, 1000) + "..." : 
+                                         data.content;
+                    
+                    // 累积原始文本
+                    accumulatedText += contentToAdd;
+                    
+                    // 检测思考开始和结束标签
+                    const thinkStartTagIndex = contentToAdd.indexOf('<think>');
+                    const thinkEndTagIndex = contentToAdd.indexOf('</think>');
+                    
+                    // 处理思考开始标签
+                    if (thinkStartTagIndex !== -1 && !isThinking) {
+                        isThinking = true;
+                        thinkStartTime = new Date();
+                        console.log('思考开始');
+                        thinkStartIndex = accumulatedText.indexOf('<think>');
+                        
+                        // 分离思考前的内容
+                        normalContent = accumulatedText.substring(0, thinkStartIndex);
+                        // 初始化思考内容（去掉<think>标签）
+                        thinkContent = accumulatedText.substring(thinkStartIndex + 7);
+                    } 
+                    // 如果已经在思考模式中，更新思考内容
+                    else if (isThinking && thinkEndTagIndex === -1) {
+                        // 添加到思考内容
+                        thinkContent += contentToAdd;
+                    }
+                    // 处理思考结束标签
+                    else if (isThinking && thinkEndTagIndex !== -1) {
+                        // 分离思考后的内容
+                        const fullText = accumulatedText;
+                        const endTagIndex = fullText.indexOf('</think>');
+                        
+                        // 更新思考内容（去掉结束标签）
+                        thinkContent = fullText.substring(thinkStartIndex + 7, endTagIndex);
+                        
+                        // 提取思考后的内容
+                        normalContent = fullText.substring(0, thinkStartIndex);
+                        const afterThink = fullText.substring(endTagIndex + 8);
+                        
+                        // 计算思考耗时并保存到变量中
+                        if (thinkStartTime) {
+                            const thinkEndTime = new Date();
+                            thinkDurationSeconds = (thinkEndTime - thinkStartTime) / 1000; // 秒
+                            // 只记录耗时信息用于显示，但不添加到文本内容中
+                        }
+                        
+                        // 重置思考状态
+                        isThinking = false;
+                        console.log('思考结束，耗时：' + thinkDurationSeconds + '秒');
+                    }
+                    
+                    // 如果累积内容太长，进行截断
+                    if (accumulatedText.length > 10000) {
+                        accumulatedText = accumulatedText.substring(0, 10000) + 
+                                         "\n\n[内容已截断，过长的分析可能包含重复信息...]";
+                        
+                        // 关闭连接以防止进一步累积
+                        eventSource.close();
+                        
+                        if (streamOutput) {
+                            streamOutput.innerHTML += `<div class="alert alert-info mt-3">内容过长，已截断</div>`;
+                        }
+                        
+                        // 使用截断的内容更新结果
+                        updateAnalysisResult(accumulatedText, selectedModel);
+                        return;
+                    }
+                    
+                    // 更新流式输出区域
+                    if (streamOutput) {
+                        let html = '';
+                        
+                        // 处理思考前的内容
+                        if (normalContent.trim()) {
+                            try {
+                                html += `<div class="normal-content" style="color: #111111;">${marked.parse(normalContent)}</div>`;
+                            } catch (e) {
+                                html += `<div class="normal-content" style="color: #111111;">${normalContent}</div>`;
+                            }
+                        }
+                        
+                        // 如果在思考模式中，添加思考区域
+                        if (isThinking || thinkContent) {
+                            // 获取思考内容的最后一行（保留最后一条思考内容作为摘要）
+                            const thinkLines = thinkContent.split('\n').filter(line => line.trim());
+                            const lastThinkLine = thinkLines.length > 0 ? thinkLines[thinkLines.length - 1] : '';
+                            const thinkCompleted = !isThinking;
+                            
+                            // 思考时间信息
+                            let thinkTimeText = '';
+                            if (thinkCompleted && thinkDurationSeconds !== null) {
+                                // 使用保存的耗时变量
+                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDurationSeconds.toFixed(2)}秒</small></div>`;
+                            } else if (isThinking) {
+                                let thinkingTime = 0;
+                                if (thinkStartTime) {
+                                    const now = new Date();
+                                    thinkingTime = (now - thinkStartTime) / 1000;
+                                }
+                                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考中...${thinkingTime.toFixed(1)}秒</small></div>`;
+                            }
+                            
+                            // 添加思考部分 - 流式输出过程中不显示按钮
+                            html += `
+                                <div class="think-container my-3 border-start border-primary ps-3">
+                                    <div class="think-header d-flex align-items-center">
+                                        <h5 class="mb-2 text-primary"><i class="bi bi-lightbulb"></i> 模型思考过程</h5>
+                                    </div>
+                                    
+                                    <div class="think-summary mb-2">
+                                        <div class="think-last-line" style="color: #111111;">${lastThinkLine}</div>
+                                    </div>
+                                    
+                                    <div class="think-details" style="display: none;">
+                                        <pre class="think-content p-2 bg-light rounded" style="color: #111111;">${thinkContent}</pre>
+                                    </div>
+                                    
+                                    ${thinkTimeText}
+                                </div>
+                            `;
+                            
+                            // 添加思考后的内容（如果已完成思考）
+                            if (thinkCompleted) {
+                                const afterThink = accumulatedText.substring(accumulatedText.indexOf('</think>') + 8);
+                                if (afterThink.trim()) {
+                                    try {
+                                        html += `<div class="after-think-content" style="color: #111111;">${marked.parse(afterThink)}</div>`;
+                                    } catch (e) {
+                                        html += `<div class="after-think-content" style="color: #111111;">${afterThink}</div>`;
+                                    }
+                                }
+                            }
+                        } else {
+                            // 如果没有思考内容，直接使用完整的累积文本
+                            try {
+                                html = `<div class="full-content" style="color: #111111;">${marked.parse(accumulatedText)}</div>`;
+                            } catch (e) {
+                                html = `<div class="full-content" style="color: #111111;">${accumulatedText}</div>`;
+                            }
+                        }
+                        
+                        // 显示处理后的内容
+                        streamOutput.innerHTML = html;
+                        
+                        // 应用与非流式输出相同的样式
+                        const allElements = streamOutput.querySelectorAll('p, li, strong, b, em, span:not(.badge):not(.text-muted)');
+                        allElements.forEach(el => {
+                            el.style.color = '#111111';
+                        });
+                        
+                        // 滚动到底部
+                        streamOutput.scrollTop = streamOutput.scrollHeight;
+                    }
+                }
+            } catch (e) {
+                console.error('解析事件数据失败:', e, event.data);
+            }
+        };
+        
+        // 处理错误
+        eventSource.onerror = function(error) {
+            console.error('EventSource 错误:', error);
+            eventSource.close();
+            
+            // 显示错误消息
+            if (streamOutput) {
+                streamOutput.innerHTML += `<div class="alert alert-danger mt-3">分析过程中出错，连接已关闭</div>`;
+            }
+            
+            // 如果有足够的累积文本，仍然显示结果
+            if (accumulatedText.length > 50) {
+                updateAnalysisResult(accumulatedText, selectedModel);
+            }
+        };
+    }
+    
+    // 清理重复内容的函数
+    function cleanupDuplicateContent(text) {
+        // 尝试查找并删除多次重复的模式
+        const lines = text.split('\n');
+        const uniqueLines = [];
+        const seenPatterns = new Set();
+        
+        for (let i = 0; i < lines.length; i++) {
+            // 检查这一行是否是前面已经出现过多次的模式
+            const line = lines[i].trim();
+            
+            // 跳过空行
+            if (!line) {
+                uniqueLines.push(lines[i]);
+                continue;
+            }
+            
+            // 检查该行是否与大量已有行重复
+            const similarLines = uniqueLines.filter(existingLine => 
+                existingLine.trim() === line || 
+                (line.length > 10 && existingLine.includes(line))
+            );
+            
+            if (similarLines.length < 3) {  // 允许最多出现3次
+                uniqueLines.push(lines[i]);
+            } else if (!seenPatterns.has(line)) {
+                uniqueLines.push(lines[i]);
+                uniqueLines.push("...[重复内容已省略]...");
+                seenPatterns.add(line);
+            }
+        }
+        
+        return uniqueLines.join('\n');
+    }
 
+    function updateAnalysisResult(markdownContent, selectedModel) {
+        // 将流式输出结果转换为最终分析结果
+        const resultSection = document.querySelector('#vulnerability-result');
+        if (!resultSection) return;
+        
+        // 格式化处理思考内容
+        const formattedContent = formatContentWithThinking(markdownContent);
+        
+        resultSection.innerHTML = `
+                    <section id="vulnerability-analysis" class="section light-background" data-aos="fade-up">
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-10">
+                                    <!-- 标题部分 -->
+                                    <div class="text-center mb-5">
+                                        <h2 class="fw-bold" style="color: #37517e; margin-bottom: 20px;">
+                                            <i class="bi bi-shield-exclamation"></i> 漏洞分析结果
+                                        </h2>
+                                        <div class="divider-custom">
+                                            <div class="divider-custom-line"></div>
+                                            <div class="divider-custom-line"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 分析结果卡片 -->
+                                    <div class="card mb-4 shadow-sm border-0">
+                                        <div class="card-body p-4">
+                                ${formattedContent}
+                                        </div>
+                                        <div class="card-footer bg-light p-3 d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="bi bi-cpu"></i> 由 <strong>${selectedModel}</strong> 模型分析
+                                            </small>
+                                            <div class="export-buttons">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="exportToPDF()">
+                                                    <i class="bi bi-file-pdf"></i> 导出PDF
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="exportToMarkdown()">
+                                                    <i class="bi bi-file-text"></i> 导出Markdown
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    `;
+        
+        // 添加事件监听器到展开/折叠按钮
+        const toggleBtn = resultSection.querySelector('.think-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.onclick = function() {
+                const thinkDetails = resultSection.querySelector('.think-details');
+                const isExpanded = thinkDetails.style.display !== 'none';
+                
+                // 切换显示状态
+                thinkDetails.style.display = isExpanded ? 'none' : 'block';
+                
+                // 更新按钮图标
+                this.innerHTML = isExpanded ? 
+                    '<i class="bi bi-chevron-down"></i>' : 
+                    '<i class="bi bi-chevron-up"></i>';
+            };
+        }
+        
+        // 确保分析结果中的所有文本都是深色的，但不改变其他样式
+        const textElements = resultSection.querySelectorAll('p, li, strong, b, em, span:not(.badge):not(.text-muted)');
+        textElements.forEach(el => {
+            el.style.color = '#111111';
+        });
+    }
+
+    // 格式化包含思考内容的文本
+    function formatContentWithThinking(content) {
+        // 提取思考内容
+        const thinkStartIndex = content.indexOf('<think>');
+        const thinkEndIndex = content.indexOf('</think>');
+        
+        // 如果没有思考标签，直接返回Markdown解析后的内容
+        if (thinkStartIndex === -1) {
+            try {
+                return marked.parse(content);
+            } catch (e) {
+                return content;
+            }
+        }
+        
+        // 获取思考内容和非思考内容
+        const beforeThink = content.substring(0, thinkStartIndex);
+        let thinkContent = '';
+        let afterThink = '';
+        
+        // 如果找到完整的思考标签
+        if (thinkEndIndex !== -1 && thinkEndIndex > thinkStartIndex) {
+            thinkContent = content.substring(thinkStartIndex + 7, thinkEndIndex);
+            afterThink = content.substring(thinkEndIndex + 8);
+        } 
+        // 如果只有开始标签但没有结束标签
+        else if (thinkStartIndex !== -1) {
+            thinkContent = content.substring(thinkStartIndex + 7);
+        }
+        
+        // 获取思考内容的最后一行（保留最后一条思考内容作为摘要）
+        const thinkLines = thinkContent.split('\n').filter(line => line.trim());
+        const lastThinkLine = thinkLines.length > 0 ? thinkLines[thinkLines.length - 1] : '';
+        
+        // 计算思考完成状态
+        const isThinkingComplete = thinkEndIndex !== -1;
+        
+        // 提取思考时间从文本中
+        let thinkTimeText = '';
+        
+        // 使用全局变量显示耗时
+        if (thinkDurationSeconds !== null) {
+            thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDurationSeconds.toFixed(2)}秒</small></div>`;
+        } else {
+            // 兼容方式：从文本中提取思考时间
+            const thinkTimeMatch = content.match(/思考完成，耗时: (\d+\.\d+)秒/);
+            if (thinkTimeMatch && thinkTimeMatch[1]) {
+                const thinkDuration = parseFloat(thinkTimeMatch[1]);
+                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>思考完成，耗时: ${thinkDuration.toFixed(2)}秒</small></div>`;
+            } else {
+                thinkTimeText = `<div class="think-time mt-2 mb-2 text-muted"><small>${isThinkingComplete ? '思考完成' : '思考中...'}</small></div>`;
+            }
+        }
+        
+        // 构建HTML
+        let html = '';
+        
+        // 添加思考前的内容
+        if (beforeThink.trim()) {
+            try {
+                html += marked.parse(beforeThink);
+            } catch (e) {
+                html += beforeThink;
+            }
+        }
+        
+        // 添加思考部分 - 在最终结果中显示展开按钮
+        html += `
+            <div class="think-container my-3 border-start border-primary ps-3">
+                <div class="think-header d-flex align-items-center">
+                    <h5 class="mb-2 text-primary"><i class="bi bi-lightbulb"></i> 模型思考过程</h5>
+                    <button class="btn btn-sm ms-2 think-toggle-btn" title="展开/折叠思考内容">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                
+                <div class="think-summary mb-2">
+                    <div class="think-last-line">${lastThinkLine}</div>
+                </div>
+                
+                <div class="think-details" style="display: none;">
+                    <pre class="think-content p-2 bg-light rounded" style="color: #111111;">${thinkContent}</pre>
+                </div>
+                
+                ${thinkTimeText}
+            </div>
+        `;
+        
+        // 添加思考后的内容
+        if (afterThink.trim()) {
+            try {
+                html += marked.parse(afterThink);
+            } catch (e) {
+                html += afterThink;
+            }
+        }
+        
+        return html;
+    }
+
+    // 处理Markdown内容，将其分解为不同的部分
+    function processMarkdownContent(markdown) {
+        // 直接返回空对象，因为我们不再需要分离不同部分
+        return {};
+    }
 
     function displayResults(data) {
         // 生成表格 HTML，其中在 <tfoot> 中添加了输入框
         let tableHTML = `
-    <table id="results-table" class="table display">
-        <thead>
-            <tr>
-                <th>选择</th>
-                <th>漏洞名称</th>
-                <th>函数名称</th>
-                <th>出现位置</th>
-                <th>地址</th>
-                <th>优先级</th>
-            </tr>
-        </thead>
-        <tbody>
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary">
+                <h3 class="m-0 text-white" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); color: #ffffff !important;"><i class="bi bi-bug" style="color: #ffffff !important;"></i> 检测到的漏洞</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="results-table" class="table table-striped table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-white">选择</th>
+                                <th class="text-white">漏洞名称</th>
+                                <th class="text-white">函数名称</th>
+                                <th class="text-white">出现位置</th>
+                                <th class="text-white">地址</th>
+                                <th class="text-white">危险程度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
     `;
         data.forEach((item, index) => {
+            // 根据优先级设置行的类
+            let rowClass = '';
+            let badgeClass = 'bg-info';
+            
+            if (item.Priority.toLowerCase().includes('high')) {
+                rowClass = 'table-danger';
+                badgeClass = 'bg-danger';
+            } else if (item.Priority.toLowerCase().includes('medium')) {
+                rowClass = 'table-warning';
+                badgeClass = 'bg-warning text-dark';
+            } else if (item.Priority.toLowerCase().includes('low')) {
+                rowClass = 'table-success';
+                badgeClass = 'bg-success';
+            }
+            
             tableHTML += `
-            <tr>
+            <tr class="${rowClass}">
                 <td>
-                  <input type="radio" name="vulfi-row" value="${item.Address}"
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="vulfi-row" value="${item.Address}"
                          onclick="selectRow('${item.Address}')">
+                  </div>
                 </td>
                 <td>${item.IssueName}</td>
-                <td>${item.FunctionName}</td>
+                <td><code>${item.FunctionName}</code></td>
                 <td>${item.FoundIn}</td>
-                <td>${item.Address}</td>
-                <td>${item.Priority}</td>
+                <td><code>${item.Address}</code></td>
+                <td><span class="badge ${badgeClass}">${item.Priority}</span></td>
             </tr>
         `;
         });
         tableHTML += `
-        </tbody>
-        <tfoot>
-            <tr>
-                <th></th>
-                <th><input type="text" placeholder="筛选漏洞名称" /></th>
-                <th><input type="text" placeholder="筛选函数名称" /></th>
-                <th></th>
-                <th></th>
-                <th><input type="text" placeholder="筛选优先级" /></th>
-            </tr>
-        </tfoot>
-    </table>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="筛选漏洞名称" /></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="筛选函数名称" /></th>
+                            <th></th>
+                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm" placeholder="筛选优先级" /></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
     `;
         document.getElementById('detection-result').innerHTML = tableHTML;
 
@@ -295,6 +975,19 @@
             paging: true,       // 启用分页
             ordering: true,     // 启用排序
             info: true,         // 显示页脚信息
+            language: {
+                search: "搜索:",
+                lengthMenu: "显示 _MENU_ 条记录",
+                info: "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                infoEmpty: "显示第 0 至 0 项结果，共 0 项",
+                infoFiltered: "(由 _MAX_ 项结果过滤)",
+                paginate: {
+                    first: "首页",
+                    previous: "上页",
+                    next: "下页",
+                    last: "末页"
+                }
+            },
             columnDefs: [
                 {orderable: false, targets: 0}  // 禁止第一列排序
             ]
@@ -312,6 +1005,44 @@
                 });
             }
         });
+        
+        // 添加结果统计
+        const highCount = data.filter(item => item.Priority.toLowerCase().includes('high')).length;
+        const mediumCount = data.filter(item => item.Priority.toLowerCase().includes('medium')).length;
+        const lowCount = data.filter(item => item.Priority.toLowerCase().includes('low')).length;
+        
+        // 在表格前添加统计信息
+        const summaryHTML = `
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 bg-danger">
+                    <div class="card-body text-center p-4">
+                        <h3 class="mb-2 text-white" style="font-size: 2.8rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">${highCount}</h3>
+                        <p class="mb-0 text-white" style="font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">高危漏洞</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 bg-warning">
+                    <div class="card-body text-center p-4">
+                        <h3 class="mb-2 text-white" style="font-size: 2.8rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">${mediumCount}</h3>
+                        <p class="mb-0 text-white" style="font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">中危漏洞</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 bg-success">
+                    <div class="card-body text-center p-4">
+                        <h3 class="mb-2 text-white" style="font-size: 2.8rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.6);">${lowCount}</h3>
+                        <p class="mb-0 text-white" style="font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">低危漏洞</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        
+        // 将统计信息添加到表格前
+        document.getElementById('detection-result').insertAdjacentHTML('afterbegin', summaryHTML);
     }
 
 
@@ -338,24 +1069,544 @@
             // 显示上传的文件名
             const reader = new FileReader();
             reader.onload = function (e) {
-                document.getElementById('file-name').textContent = "已选择文件: " + file.name;
+                if (document.getElementById('file-name')) {
+                    document.getElementById('file-name').textContent = "已选择文件: " + file.name;
+                }
             };
             reader.readAsDataURL(file);
 
-            // 修改按钮为“开始检测”，并直接开始检测
-            document.getElementById('action-btn').textContent = '漏洞检测中';
-            currentStep = 'detect';  // 更新按钮状态
+            // 修改按钮为"IDA分析中"
+            document.getElementById('action-btn').textContent = 'IDA分析中...';
+            document.getElementById('action-btn').disabled = true;
 
-            startDetection();  // 立即开始检测
+            // 上传文件并进行IDA分析
+            uploadAndAnalyzeFile(file);
         } else {
             alert("请选择一个文件进行上传！");
         }
     }
 
+    // 新增：上传文件并进行IDA分析
+    function uploadAndAnalyzeFile(file) {
+        const formData = new FormData(document.getElementById('detect-form'));
+        
+        // 记录选择的检测模型
+        const detectModelSelect = document.getElementById('detect-model-select');
+        const selectedDetectModel = detectModelSelect ? detectModelSelect.value : 'BinEncoder';
+        console.log("选择使用检测模型:", selectedDetectModel);
+        
+        // 记录选择的分析模型
+        const modelSelect = document.getElementById('model-select');
+        const selectedModel = modelSelect ? modelSelect.value : 'deepseek-r1:14b';
+        console.log("选择使用分析模型:", selectedModel);
+
+        fetch('/detect', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log("收到的完整数据:", data);
+
+                if (data.error) {
+                    console.error("错误:", data.error);
+                    alert(data.error || "发生了未知错误");
+                    document.getElementById('action-btn').disabled = false;
+                    document.getElementById('action-btn').textContent = '上传';
+                } else {
+                    // 保存分析结果
+                    extractedFunctionsData = data.result;
+                    
+                    // 显示IDA分析结果
+                    displayIDAResults(extractedFunctionsData);
+                    
+                    // 更新按钮和当前步骤
+                    document.getElementById('action-btn').disabled = false;
+                    document.getElementById('action-btn').textContent = '执行漏洞检测';
+                    currentStep = 'display_ida';
+                }
+            })
+            .catch(error => {
+                document.getElementById('action-btn').disabled = false;
+                document.getElementById('action-btn').textContent = '上传';
+                console.error('文件处理过程中出错:', error);
+                alert('文件处理过程中出错，请稍后再试');
+            });
+    }
+
+    // 新增：显示IDA分析结果
+    function displayIDAResults(functions) {
+        // 生成表格 HTML 显示函数信息
+        let tableHTML = `
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary">
+                <h3 class="m-0 text-white" style="font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); color: #ffffff !important;">
+                    <i class="bi bi-file-earmark-code" style="color: #ffffff !important;"></i> IDA分析结果
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="alert alert-info m-3">
+                    <i class="bi bi-info-circle"></i> IDA共提取了 <strong>${functions.length}</strong> 个函数。点击每行末尾的详情按钮可查看函数的指令列表。
+                </div>
+                <div class="table-responsive">
+                    <table id="ida-results-table" class="table table-striped table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-white" style="width: 40%">函数名称</th>
+                                <th class="text-white" style="width: 25%">起始地址</th>
+                                <th class="text-white" style="width: 25%">结束地址</th>
+                                <th class="text-white" style="width: 10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        // 生成表格行，显示所有函数
+        functions.forEach((func, index) => {
+            tableHTML += `
+            <tr>
+                <td><code>${func.function_name}</code></td>
+                <td><code>${func.start_address}</code></td>
+                <td><code>${func.end_address}</code></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" 
+                            onclick="showFunctionDetails(${index})" 
+                            title="查看函数指令详情">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </td>
+            </tr>
+            `;
+        });
+
+        tableHTML += `
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th><input type="text" class="form-control form-control-sm" placeholder="筛选函数名称" /></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 函数详情模态框 -->
+        <div class="modal fade" id="functionDetailsModal" tabindex="-1" aria-labelledby="functionDetailsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="functionDetailsModalLabel">函数指令详情</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="functionDetailsContent">
+                        <!-- 函数详情内容将在这里动态填充 -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+
+        // 显示IDA分析结果
+        document.getElementById('detection-result').innerHTML = tableHTML;
+
+        // 保存函数数据到全局变量，用于显示详情
+        window.extractedFunctionsData = functions;
+
+        // 如果之前已经初始化过 DataTable，则先销毁
+        if ($.fn.DataTable.isDataTable('#ida-results-table')) {
+            $('#ida-results-table').DataTable().destroy();
+        }
+
+        // 初始化 DataTable
+        let table = $('#ida-results-table').DataTable({
+            paging: true,       // 启用分页
+            ordering: true,     // 启用排序
+            info: true,         // 显示页脚信息
+            pageLength: 15,     // 每页显示15条记录
+            language: {
+                search: "搜索:",
+                lengthMenu: "显示 _MENU_ 条记录",
+                info: "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                infoEmpty: "显示第 0 至 0 项结果，共 0 项",
+                infoFiltered: "(由 _MAX_ 项结果过滤)",
+                paginate: {
+                    first: "首页",
+                    previous: "上页",
+                    next: "下页",
+                    last: "末页"
+                }
+            }
+        });
+
+        // 针对每一列的筛选
+        $('#ida-results-table tfoot th').each(function (i) {
+            // 如果当前列的 tfoot 单元格中存在 input 元素
+            let input = $(this).find('input');
+            if (input.length > 0) {
+                input.on('keyup change clear', function () {
+                    if (table.column(i).search() !== this.value) {
+                        table.column(i).search(this.value).draw();
+                    }
+                });
+            }
+        });
+
+        // 添加提示信息
+        const summaryHTML = `
+        <div class="alert alert-warning">
+            <i class="bi bi-lightning-charge"></i> IDA分析完成，请点击 <strong>执行漏洞检测</strong> 按钮继续进行漏洞分析。
+        </div>
+        `;
+
+        // 将提示信息添加到表格前
+        document.getElementById('detection-result').insertAdjacentHTML('afterbegin', summaryHTML);
+    }
+
+    // 新增：显示函数详情
+    function showFunctionDetails(index) {
+        if (!window.extractedFunctionsData || !window.extractedFunctionsData[index]) {
+            console.error('无法获取函数详情');
+            return;
+        }
+        
+        const func = window.extractedFunctionsData[index];
+        
+        let modalContent = `
+            <div class="mb-3">
+                <h5>函数基本信息</h5>
+                <table class="table table-sm table-bordered">
+                    <tr><th style="width: 150px;">函数名称</th><td><code>${func.function_name}</code></td></tr>
+                    <tr><th>起始地址</th><td><code>${func.start_address}</code></td></tr>
+                    <tr><th>结束地址</th><td><code>${func.end_address}</code></td></tr>
+                </table>
+            </div>
+        `;
+        
+        if (func.instructions && func.instructions.length > 0) {
+            modalContent += `
+                <div>
+                    <h5>指令列表</h5>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">地址</th>
+                                    <th style="width: 70%;">指令</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            func.instructions.forEach(instruction => {
+                modalContent += `
+                    <tr>
+                        <td><code>${instruction.address}</code></td>
+                        <td><code>${instruction.instruction}</code></td>
+                    </tr>
+                `;
+            });
+            
+            modalContent += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            modalContent += `<div class="alert alert-info">该函数没有指令数据</div>`;
+        }
+        
+        // 填充模态框内容
+        document.getElementById('functionDetailsContent').innerHTML = modalContent;
+        document.getElementById('functionDetailsModalLabel').textContent = `函数指令详情: ${func.function_name}`;
+        
+        // 显示模态框
+        const modal = new bootstrap.Modal(document.getElementById('functionDetailsModal'));
+        modal.show();
+    }
 
     // 刷新页面
     function resetPage() {
-        window.location.reload();  // 通过重载页面实现“重置”
+        window.location.reload();  // 通过重载页面实现"重置"
+    }
+
+    // 页面加载完成后，检查URL参数是否有预选模型
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const preSelectedModel = urlParams.get('model');
+        const preSelectedDetectModel = urlParams.get('detect_model');
+        
+        // 刷新模型列表
+        refreshModelsList();
+        refreshDetectModelsList();
+        
+        // 设置预选的分析模型
+        if (preSelectedModel) {
+            const modelSelect = document.getElementById('model-select');
+            
+            // 延迟设置选中项，等待刷新完成
+            setTimeout(() => {
+                for (let i = 0; i < modelSelect.options.length; i++) {
+                    if (modelSelect.options[i].value === preSelectedModel) {
+                        modelSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }, 1000);
+        }
+        
+        // 设置预选的检测模型
+        if (preSelectedDetectModel) {
+            const detectModelSelect = document.getElementById('detect-model-select');
+            
+            // 如果已有预选的检测模型选项，选择它
+            if (detectModelSelect) {
+                // 延迟设置选中项，等待刷新完成
+                setTimeout(() => {
+                    // 检查是否已有该选项
+                    let found = false;
+                    for (let i = 0; i < detectModelSelect.options.length; i++) {
+                        if (detectModelSelect.options[i].value === preSelectedDetectModel) {
+                            detectModelSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    // 如果没有找到匹配的选项，添加一个新选项
+                    if (!found) {
+                        const option = new Option(preSelectedDetectModel, preSelectedDetectModel);
+                        detectModelSelect.add(option);
+                        detectModelSelect.value = preSelectedDetectModel;
+                    }
+                    
+                    console.log(`已预选检测模型: ${preSelectedDetectModel}`);
+                }, 1000);
+            }
+        }
+    });
+
+    // 添加导出PDF和Markdown的函数
+    function exportToPDF() {
+        // 获取分析结果内容
+        const markdownContent = getOriginalMarkdownContent();
+        
+        if (!markdownContent) {
+            alert('没有可导出的分析结果');
+            return;
+        }
+        
+        // 显示导出中状态
+        const exportButtons = document.querySelectorAll('.export-buttons button');
+        exportButtons.forEach(btn => btn.disabled = true);
+        
+        // 添加临时加载指示器
+        const exportBtn = document.querySelector('.export-buttons button:first-child');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 导出中...';
+        
+        // 发送请求到服务器转换为PDF
+        fetch('/api/export-to-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: markdownContent
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || '导出PDF失败');
+                });
+            }
+            
+            // 返回的是PDF文件，需要创建下载链接
+            return response.blob();
+        })
+        .then(blob => {
+            // 创建临时下载链接
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '漏洞分析报告.pdf';
+            document.body.appendChild(a);
+            a.click();
+            
+            // 清理
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // 恢复按钮状态
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        })
+        .catch(error => {
+            console.error('导出PDF出错:', error);
+            alert('导出PDF失败: ' + error.message);
+            
+            // 恢复按钮状态
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+            
+            // 如果weasyprint失败，尝试使用备用方法
+            if (error.message.includes('weasyprint')) {
+                if (confirm('PDF生成库可能未正确安装，是否尝试备用方法?')) {
+                    exportToPDFAlternative();
+                }
+            }
+        });
+    }
+    
+    // 备用PDF导出方法
+    function exportToPDFAlternative() {
+        const markdownContent = getOriginalMarkdownContent();
+        
+        if (!markdownContent) {
+            alert('没有可导出的分析结果');
+            return;
+        }
+        
+        // 显示导出中状态
+        const exportButtons = document.querySelectorAll('.export-buttons button');
+        exportButtons.forEach(btn => btn.disabled = true);
+        
+        // 添加临时加载指示器
+        const exportBtn = document.querySelector('.export-buttons button:first-child');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 备用导出中...';
+        
+        // 使用备用API
+        fetch('/api/export-to-pdf-alt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: markdownContent
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || '导出PDF失败');
+                });
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '漏洞分析报告.pdf';
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        })
+        .catch(error => {
+            console.error('备用PDF导出失败:', error);
+            alert('备用导出方法也失败: ' + error.message);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        });
+    }
+    
+    // 导出为Markdown文件
+    function exportToMarkdown() {
+        const markdownContent = getOriginalMarkdownContent();
+        
+        if (!markdownContent) {
+            alert('没有可导出的分析结果');
+            return;
+        }
+        
+        // 显示导出中状态
+        const exportButtons = document.querySelectorAll('.export-buttons button');
+        exportButtons.forEach(btn => btn.disabled = true);
+        
+        // 添加临时加载指示器
+        const exportBtn = document.querySelector('.export-buttons button:last-child');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 导出中...';
+        
+        // 发送请求到服务器导出Markdown
+        fetch('/api/export-to-markdown', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: markdownContent
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || '导出Markdown失败');
+                });
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '漏洞分析报告.md';
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        })
+        .catch(error => {
+            console.error('导出Markdown出错:', error);
+            alert('导出Markdown失败: ' + error.message);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        });
+    }
+    
+    // 获取原始的Markdown内容
+    function getOriginalMarkdownContent() {
+        // 获取当前分析结果的纯Markdown内容(不含思考过程)
+        if (window.currentAnalysisContent) {
+            // 如果有存储在全局变量中的内容，优先使用
+            return window.currentAnalysisContent;
+        } else {
+            // 尝试从页面中提取
+            const resultSection = document.querySelector('#vulnerability-result');
+            if (!resultSection) return null;
+            
+            // 检查是否有完整的分析结果存储
+            const analysisText = resultSection.getAttribute('data-original-content');
+            if (analysisText) return analysisText;
+            
+            // 如果都没有，提示用户需要重新分析
+            alert('找不到原始分析内容，可能需要重新进行分析');
+            return null;
+        }
     }
 </script>
 {% endblock %}
+
