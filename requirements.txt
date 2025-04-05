@@ -7,3 +7,6 @@ psutil
 pynvml
 nvidia-ml-py
 tqdm
+markdown
+weasyprint
+pdfkit

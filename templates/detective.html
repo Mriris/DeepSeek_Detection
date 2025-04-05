@@ -405,21 +405,23 @@
             .then(data => {
                 if (data.error) {
                     console.error("分析失败:", data.error);
-                alert("分析失败: " + data.error);
+                    alert("分析失败: " + data.error);
                 } else {
                     console.log("分析结果:", data.result);
-                // 更新UI显示结果
-                updateAnalysisResult(data.result, selectedModel);
-            }
-        })
-        .catch(error => {
-            console.error("分析过程中出错:", error);
-            // 显示错误消息在结果区域
-            const streamOutput = document.getElementById('stream-output');
-            if (streamOutput) {
-                streamOutput.innerHTML = `<div class="alert alert-danger mt-3">分析过程中出错: ${error.message}</div>`;
-            }
-        });
+                    // 保存原始Markdown内容到全局变量
+                    window.currentAnalysisContent = data.result;
+                    // 更新UI显示结果
+                    updateAnalysisResult(data.result, selectedModel);
+                }
+            })
+            .catch(error => {
+                console.error("分析过程中出错:", error);
+                // 显示错误消息在结果区域
+                const streamOutput = document.getElementById('stream-output');
+                if (streamOutput) {
+                    streamOutput.innerHTML = `<div class="alert alert-danger mt-3">分析过程中出错: ${error.message}</div>`;
+                }
+            });
     }
 
     function analyzeVulnerabilityStream(address, selectedModel) {
@@ -460,6 +462,9 @@
                 } else if (data.event === 'end') {
                     console.log('分析结束');
                     eventSource.close();
+                    
+                    // 保存原始内容到全局变量
+                    window.currentAnalysisContent = accumulatedText;
                     
                     // 使用accumulated结果更新UI
                     updateAnalysisResult(accumulatedText, selectedModel);
@@ -737,10 +742,18 @@
                                         <div class="card-body p-4">
                                 ${formattedContent}
                                         </div>
-                                        <div class="card-footer bg-light p-3">
+                                        <div class="card-footer bg-light p-3 d-flex justify-content-between align-items-center">
                                             <small class="text-muted">
                                                 <i class="bi bi-cpu"></i> 由 <strong>${selectedModel}</strong> 模型分析
                                             </small>
+                                            <div class="export-buttons">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="exportToPDF()">
+                                                    <i class="bi bi-file-pdf"></i> 导出PDF
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="exportToMarkdown()">
+                                                    <i class="bi bi-file-text"></i> 导出Markdown
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1379,6 +1392,221 @@
             }
         }
     });
+
+    // 添加导出PDF和Markdown的函数
+    function exportToPDF() {
+        // 获取分析结果内容
+        const markdownContent = getOriginalMarkdownContent();
+        
+        if (!markdownContent) {
+            alert('没有可导出的分析结果');
+            return;
+        }
+        
+        // 显示导出中状态
+        const exportButtons = document.querySelectorAll('.export-buttons button');
+        exportButtons.forEach(btn => btn.disabled = true);
+        
+        // 添加临时加载指示器
+        const exportBtn = document.querySelector('.export-buttons button:first-child');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 导出中...';
+        
+        // 发送请求到服务器转换为PDF
+        fetch('/api/export-to-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: markdownContent
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || '导出PDF失败');
+                });
+            }
+            
+            // 返回的是PDF文件，需要创建下载链接
+            return response.blob();
+        })
+        .then(blob => {
+            // 创建临时下载链接
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '漏洞分析报告.pdf';
+            document.body.appendChild(a);
+            a.click();
+            
+            // 清理
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // 恢复按钮状态
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        })
+        .catch(error => {
+            console.error('导出PDF出错:', error);
+            alert('导出PDF失败: ' + error.message);
+            
+            // 恢复按钮状态
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+            
+            // 如果weasyprint失败，尝试使用备用方法
+            if (error.message.includes('weasyprint')) {
+                if (confirm('PDF生成库可能未正确安装，是否尝试备用方法?')) {
+                    exportToPDFAlternative();
+                }
+            }
+        });
+    }
+    
+    // 备用PDF导出方法
+    function exportToPDFAlternative() {
+        const markdownContent = getOriginalMarkdownContent();
+        
+        if (!markdownContent) {
+            alert('没有可导出的分析结果');
+            return;
+        }
+        
+        // 显示导出中状态
+        const exportButtons = document.querySelectorAll('.export-buttons button');
+        exportButtons.forEach(btn => btn.disabled = true);
+        
+        // 添加临时加载指示器
+        const exportBtn = document.querySelector('.export-buttons button:first-child');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 备用导出中...';
+        
+        // 使用备用API
+        fetch('/api/export-to-pdf-alt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: markdownContent
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || '导出PDF失败');
+                });
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '漏洞分析报告.pdf';
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        })
+        .catch(error => {
+            console.error('备用PDF导出失败:', error);
+            alert('备用导出方法也失败: ' + error.message);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        });
+    }
+    
+    // 导出为Markdown文件
+    function exportToMarkdown() {
+        const markdownContent = getOriginalMarkdownContent();
+        
+        if (!markdownContent) {
+            alert('没有可导出的分析结果');
+            return;
+        }
+        
+        // 显示导出中状态
+        const exportButtons = document.querySelectorAll('.export-buttons button');
+        exportButtons.forEach(btn => btn.disabled = true);
+        
+        // 添加临时加载指示器
+        const exportBtn = document.querySelector('.export-buttons button:last-child');
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 导出中...';
+        
+        // 发送请求到服务器导出Markdown
+        fetch('/api/export-to-markdown', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: markdownContent
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || '导出Markdown失败');
+                });
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '漏洞分析报告.md';
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        })
+        .catch(error => {
+            console.error('导出Markdown出错:', error);
+            alert('导出Markdown失败: ' + error.message);
+            
+            exportButtons.forEach(btn => btn.disabled = false);
+            exportBtn.innerHTML = originalText;
+        });
+    }
+    
+    // 获取原始的Markdown内容
+    function getOriginalMarkdownContent() {
+        // 获取当前分析结果的纯Markdown内容(不含思考过程)
+        if (window.currentAnalysisContent) {
+            // 如果有存储在全局变量中的内容，优先使用
+            return window.currentAnalysisContent;
+        } else {
+            // 尝试从页面中提取
+            const resultSection = document.querySelector('#vulnerability-result');
+            if (!resultSection) return null;
+            
+            // 检查是否有完整的分析结果存储
+            const analysisText = resultSection.getAttribute('data-original-content');
+            if (analysisText) return analysisText;
+            
+            // 如果都没有，提示用户需要重新分析
+            alert('找不到原始分析内容，可能需要重新进行分析');
+            return null;
+        }
+    }
 </script>
 {% endblock %}
 

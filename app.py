@@ -7,10 +7,12 @@ import sys
 from dotenv import load_dotenv
 from functools import wraps
 import gzip
+import io
+import uuid
 
 import ollama
 import requests
-from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for, send_file
 
 from process_vulfi import read_vulfi_file, read_extracted_functions, extract_vulfi_data, save_to_json
 
@@ -132,6 +134,11 @@ if missing_files:
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"上传文件夹 {UPLOAD_FOLDER} 不存在，正在创建...")
     os.makedirs(UPLOAD_FOLDER)
+
+# 创建PDF临时文件夹
+PDF_TEMP_FOLDER = os.path.join(PROJECT_PATH, 'temp', 'pdf')
+if not os.path.exists(PDF_TEMP_FOLDER):
+    os.makedirs(PDF_TEMP_FOLDER)
 
 
 # 确保上传的文件符合格式
@@ -1936,6 +1943,302 @@ def get_vulfi_results():
             return jsonify({'error': 'VulFi分析结果文件不存在，请先上传文件进行分析'}), 404
     except Exception as e:
         print(f"获取VulFi结果时出错: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/export-to-pdf', methods=['POST'])
+def export_to_pdf():
+    """
+    将Markdown格式的漏洞分析结果转换为PDF并提供下载
+    """
+    try:
+        data = request.get_json()
+        markdown_content = data.get('content')
+        
+        if not markdown_content:
+            return jsonify({'error': '没有提供内容'}), 400
+        
+        # 检查必要的库是否已安装
+        try:
+            import markdown
+            from weasyprint import HTML, CSS
+        except ImportError:
+            return jsonify({'error': '服务器未安装必要的库，请先安装：pip install markdown weasyprint'}), 500
+        
+        # 生成唯一的文件名
+        file_id = str(uuid.uuid4())
+        temp_html_path = os.path.join(PDF_TEMP_FOLDER, f"{file_id}.html")
+        pdf_path = os.path.join(PDF_TEMP_FOLDER, f"{file_id}.pdf")
+        
+        # 转换Markdown为HTML
+        html_content = markdown.markdown(markdown_content)
+        
+        # 添加基本样式
+        styled_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>漏洞分析报告</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 30px;
+                    color: #333;
+                }}
+                h1 {{
+                    color: #1e3a8a;
+                    border-bottom: 2px solid #1e3a8a;
+                    padding-bottom: 10px;
+                }}
+                h2 {{
+                    color: #1e3a8a;
+                    margin-top: 20px;
+                }}
+                h3 {{
+                    color: #2563eb;
+                }}
+                pre {{
+                    background-color: #f5f5f5;
+                    padding: 10px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                }}
+                code {{
+                    font-family: 'Courier New', Courier, monospace;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-bottom: 20px;
+                }}
+                th, td {{
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                }}
+                th {{
+                    background-color: #f2f2f2;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 0.8em;
+                }}
+            </style>
+        </head>
+        <body>
+            {html_content}
+            <div class="footer">
+                由DeepSeek漏洞检测系统生成 - {{'%Y-%m-%d'|strftime}}
+            </div>
+        </body>
+        </html>
+        """
+        
+        # 保存HTML文件
+        with open(temp_html_path, 'w', encoding='utf-8') as f:
+            f.write(styled_html)
+        
+        # 将HTML转换为PDF
+        HTML(temp_html_path).write_pdf(pdf_path)
+        
+        # 检查PDF文件是否成功生成
+        if not os.path.exists(pdf_path):
+            return jsonify({'error': 'PDF生成失败'}), 500
+        
+        # 发送文件
+        return send_file(
+            pdf_path,
+            as_attachment=True,
+            download_name="漏洞分析报告.pdf",
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"导出PDF时出错: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+# 用于定期清理临时PDF文件的函数
+def cleanup_temp_pdf_files():
+    """
+    清理超过24小时的临时PDF文件
+    """
+    try:
+        import time
+        current_time = time.time()
+        count = 0
+        
+        for filename in os.listdir(PDF_TEMP_FOLDER):
+            file_path = os.path.join(PDF_TEMP_FOLDER, filename)
+            # 检查文件是否超过24小时
+            if os.path.isfile(file_path) and current_time - os.path.getmtime(file_path) > 86400:  # 24小时 = 86400秒
+                os.remove(file_path)
+                count += 1
+        
+        print(f"已清理 {count} 个临时PDF文件")
+    except Exception as e:
+        print(f"清理临时PDF文件时出错: {str(e)}")
+
+
+# 替代方案：如果weasyprint安装有问题，可以使用pdfkit
+@app.route('/api/export-to-pdf-alt', methods=['POST'])
+def export_to_pdf_alternative():
+    """
+    使用pdfkit作为替代方案将Markdown格式的漏洞分析结果转换为PDF
+    """
+    try:
+        data = request.get_json()
+        markdown_content = data.get('content')
+        
+        if not markdown_content:
+            return jsonify({'error': '没有提供内容'}), 400
+        
+        # 检查必要的库是否已安装
+        try:
+            import markdown
+            import pdfkit
+        except ImportError:
+            return jsonify({'error': '服务器未安装必要的库，请先安装：pip install markdown pdfkit和wkhtmltopdf'}), 500
+        
+        # 生成唯一的文件名
+        file_id = str(uuid.uuid4())
+        temp_html_path = os.path.join(PDF_TEMP_FOLDER, f"{file_id}.html")
+        pdf_path = os.path.join(PDF_TEMP_FOLDER, f"{file_id}.pdf")
+        
+        # 转换Markdown为HTML
+        html_content = markdown.markdown(markdown_content)
+        
+        # 添加基本样式
+        styled_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>漏洞分析报告</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 30px;
+                    color: #333;
+                }}
+                h1 {{
+                    color: #1e3a8a;
+                    border-bottom: 2px solid #1e3a8a;
+                    padding-bottom: 10px;
+                }}
+                h2 {{
+                    color: #1e3a8a;
+                    margin-top: 20px;
+                }}
+                h3 {{
+                    color: #2563eb;
+                }}
+                pre {{
+                    background-color: #f5f5f5;
+                    padding: 10px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                }}
+                code {{
+                    font-family: 'Courier New', Courier, monospace;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-bottom: 20px;
+                }}
+                th, td {{
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: left;
+                }}
+                th {{
+                    background-color: #f2f2f2;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 0.8em;
+                }}
+            </style>
+        </head>
+        <body>
+            {html_content}
+            <div class="footer">
+                由DeepSeek漏洞检测系统生成
+            </div>
+        </body>
+        </html>
+        """
+        
+        # 保存HTML文件
+        with open(temp_html_path, 'w', encoding='utf-8') as f:
+            f.write(styled_html)
+        
+        # 配置pdfkit选项
+        options = {
+            'page-size': 'A4',
+            'margin-top': '20mm',
+            'margin-right': '20mm',
+            'margin-bottom': '20mm',
+            'margin-left': '20mm',
+            'encoding': 'UTF-8',
+        }
+        
+        # 将HTML转换为PDF
+        pdfkit.from_file(temp_html_path, pdf_path, options=options)
+        
+        # 检查PDF文件是否成功生成
+        if not os.path.exists(pdf_path):
+            return jsonify({'error': 'PDF生成失败'}), 500
+        
+        # 发送文件
+        return send_file(
+            pdf_path,
+            as_attachment=True,
+            download_name="漏洞分析报告.pdf",
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"导出PDF时出错: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+# 直接返回Markdown文本文件的API端点
+@app.route('/api/export-to-markdown', methods=['POST'])
+def export_to_markdown():
+    """
+    将Markdown格式的漏洞分析结果导出为.md文件
+    """
+    try:
+        data = request.get_json()
+        markdown_content = data.get('content')
+        
+        if not markdown_content:
+            return jsonify({'error': '没有提供内容'}), 400
+        
+        # 创建内存文件对象
+        md_buffer = io.BytesIO()
+        md_buffer.write(markdown_content.encode('utf-8'))
+        md_buffer.seek(0)
+        
+        # 发送文件
+        return send_file(
+            md_buffer,
+            as_attachment=True,
+            download_name="漏洞分析报告.md",
+            mimetype='text/markdown'
+        )
+        
+    except Exception as e:
+        print(f"导出Markdown时出错: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
