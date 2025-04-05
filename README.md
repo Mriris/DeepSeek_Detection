@@ -1,4 +1,4 @@
-# SCNANIX - 漏洞检测系统
+# SCANIX - 漏洞检测系统
 
 SCANIX 是一个基于深度学习的漏洞检测系统，结合了机器学习和静态代码分析，能够有效地识别和修复代码中的潜在安全漏洞。该系统支持对各种二进制文件进行分析，检测可能的漏洞并提供详细的修复方案。
 
@@ -6,8 +6,9 @@ SCANIX 是一个基于深度学习的漏洞检测系统，结合了机器学习�
 ```
 .
 ├── app.py                          # 主应用程序文件，使用 Flask 构建 Web 服务
-├── deepseek_detection.py           # 深度学习模型的加载和漏洞检测
 ├── process_vulfi.py                # 处理 VulFi 扫描结果
+├── vulnerability_data_crawler.py   # 漏洞数据爬取工具
+├── perfmonitor.py                  # 性能监控工具
 ├── example/                        # 示例文件，包含测试数据和结果
 │   └── test1/
 │       ├── ConsoleApplication1.cpp # 测试代码文件
@@ -41,17 +42,17 @@ SCANIX 是一个基于深度学习的漏洞检测系统，结合了机器学习�
 
 1. **克隆项目到本地**：
    ```bash
-   git clone https://github.com/Mriris/DeepSeek_Detection.git
+   git clone https://github.com/Mriris/SCANIX.git
    ```
 
 2. **创建并激活 conda 环境**：
    - 安装 Python 3.13.2 版本的 conda 环境：
      ```bash
-     conda create -n muaDSD python=3.13.2
+     conda create -n scanix python=3.13.2
      ```
    - 激活 conda 环境：
      ```bash
-     conda activate muaDSD
+     conda activate scanix
      ```
 
 3. **安装所需的依赖包**：
@@ -68,12 +69,12 @@ SCANIX 是一个基于深度学习的漏洞检测系统，结合了机器学习�
    python app.py
    ```
 
-6. **打开浏览器并访问 `http://127.0.0.1:5000` 来使用 VULNEX**。
+6. **打开浏览器并访问 `http://127.0.0.1:5000` 来使用 SCANIX**。
 
 ## 使用方法
 
 1. **上传二进制文件**：
-   在首页，点击“开始”按钮，上传 `.bin`、`.exe` 或 `.elf` 格式的二进制文件。
+   在首页，点击"开始"按钮，上传 `.bin`、`.exe` 或 `.elf` 格式的二进制文件。
 
 2. **漏洞检测**：
    上传文件后，系统会开始对文件进行漏洞扫描。您可以查看漏洞检测结果，并进一步分析每个漏洞。
@@ -84,8 +85,10 @@ SCANIX 是一个基于深度学习的漏洞检测系统，结合了机器学习�
 ## 功能说明
 
 - **IDA 逆向工程**：通过 VulFi 扫描工具提取二进制文件的函数和指令信息。
-- **VULNEX 漏洞检测**：结合深度学习和静态分析，自动识别代码中的漏洞。
-- **DeepSeek 结果分析**：根据提取的特征数据和漏洞扫描结果，提供针对漏洞的修复方案。
+- **SCANIX 漏洞检测**：结合深度学习和静态分析，自动识别代码中的漏洞。
+- **SCANIX 结果分析**：根据提取的特征数据和漏洞扫描结果，提供针对漏洞的修复方案。
+- **知识库管理**：提供漏洞知识库管理功能，帮助用户了解不同类型的漏洞。
+- **模型训练**：支持用户上传训练数据，进行模型优化和定制化训练。
 
 ## 技术实现文档
 
