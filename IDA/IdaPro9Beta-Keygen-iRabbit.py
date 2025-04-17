@@ -1,6 +1,14 @@
 import json
 import hashlib
 import os
+import pathlib
+from dotenv import load_dotenv
+
+# 加载.env文件
+load_dotenv()
+
+# 获取IDA路径，如果环境变量不存在则使用当前目录
+IDA_PATH = os.getenv('IDA_PATH', '.')
 
 # originally made by irabbit
 license = {
@@ -177,31 +185,34 @@ def sign_hexlic(payload: dict) -> str:
 
 
 def generate_patched_dll(filename):
-    if not os.path.exists(filename):
-        print(f"Didn't find {filename}, skipping patch generation")
+    # 构建完整路径
+    full_path = os.path.join(IDA_PATH, filename)
+    
+    if not os.path.exists(full_path):
+        print(f"未找到 {full_path}，跳过生成补丁")
         return
 
-    with open(filename, "rb") as f:
+    with open(full_path, "rb") as f:
         data = f.read()
 
         if data.find(bytes.fromhex("EDFD42CBF978")) != -1:
-            print(f"{filename} looks to be already patched :)")
+            print(f"{full_path} 看起来已经被修补过了 :)")
             return
 
         if data.find(bytes.fromhex("EDFD425CF978")) == -1:
-            print(f"{filename} doesn't contain the original modulus.")
+            print(f"{full_path} 不包含原始模数。")
             return
 
         data = data.replace(
             bytes.fromhex("EDFD425CF978"), bytes.fromhex("EDFD42CBF978")
         )
 
-        patched_filename = f"{filename}.patched"
+        patched_filename = f"{full_path}.patched"
         with open(patched_filename, "wb") as f:
             f.write(data)
 
         print(
-            f"Generated modulus patch to {patched_filename}! To apply the patch, replace the original file with the patched file")
+            f"已生成补丁文件 {patched_filename}！要应用补丁，请用补丁文件替换原始文件")
 
 
 # message = bytes.fromhex(license["signature"])
@@ -212,13 +223,13 @@ license["signature"] = sign_hexlic(license["payload"])
 
 serialized = json_stringify_alphabetical(license)
 
-# write to ida.hexlic
-filename = "../../../../Users/Administrator/Downloads/IdaPro9Beta-Keygen-iRabbit/idapro.hexlic"
+# 将文件保存在IDA_PATH指定的路径下
+filename = os.path.join(IDA_PATH, "idapro.hexlic")
 
 with open(filename, "w") as f:
     f.write(serialized)
 
-print(f"Saved new license to {filename}!")
+print(f"已保存新许可证到 {filename}！")
 
 generate_patched_dll("ida32.dll")
 generate_patched_dll("ida.dll")
