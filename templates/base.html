@@ -176,6 +176,18 @@
         margin-left: 250px;
     }
     
+    /* 在显示侧边栏时调整底部区域 */
+    body.show-left-sidebar #footer {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+    
+    /* 在侧边栏收起时恢复底部区域 */
+    body.sidebar-collapsed.show-left-sidebar #footer {
+        margin-left: 0;
+        width: 100%;
+    }
+    
     body.sidebar-collapsed .expand-btn {
         display: flex;
     }
@@ -312,6 +324,15 @@
     .user-menu i {
         margin-right: 5px;
     }
+
+    #footer {
+        transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+
+    #mainContent {
+        transition: margin-left 0.3s ease;
+        padding-top: 80px; /* 添加与导航栏等高的顶部内边距 */
+    }
 </style>
 
 <script>
@@ -331,10 +352,18 @@
         if (toggleBtn && expandBtn) {
             toggleBtn.addEventListener('click', function() {
                 document.body.classList.add('sidebar-collapsed');
+                // 添加一些延迟以匹配CSS过渡效果
+                setTimeout(function() {
+                    window.dispatchEvent(new Event('resize'));
+                }, 300);
             });
             
             expandBtn.addEventListener('click', function() {
                 document.body.classList.remove('sidebar-collapsed');
+                // 添加一些延迟以匹配CSS过渡效果
+                setTimeout(function() {
+                    window.dispatchEvent(new Event('resize'));
+                }, 300);
             });
         }
     });
